@@ -267,7 +267,7 @@ public class CrawlerEpicerie extends Crawler {
 		if(element.select("td[width=60]").first() != null){
 			String bothDates = element.select("td[width=60]").first().html();
 			bothDates = bothDates.replace("&nbsp;", " ");
-			String[] dateArray = bothDates.split("<br />");
+			String[] dateArray = bothDates.split("<br>");
 			start = dateArray[0];
 			end = dateArray[1];			
 		}

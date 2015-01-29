@@ -49,7 +49,7 @@ public class Main {
 	        }
 		}
 		else{
-			System.out.print("Database is up to date: " + df.format(new Date()));
+			System.out.print("Database is up to date: " + df.format(new Date()) + "\n");
 		}
     }
 	private static long getDateDiff(Date date1, Date date2, TimeUnit timeUnit) {
