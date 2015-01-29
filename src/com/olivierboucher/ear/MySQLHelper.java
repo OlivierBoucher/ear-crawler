@@ -16,7 +16,7 @@ public class MySQLHelper {
 	public void Connect(){
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
-			connection = DriverManager.getConnection("jdbc:mysql://104.131.203.247/epicerie", "ear_system", "ear2014OB");
+			connection = DriverManager.getConnection("jdbc:mysql://104.131.203.247/epicerie", "ear_system", "EarSystem2015");
 		} 
 		catch (ClassNotFoundException | SQLException e) {
 			e.printStackTrace();
@@ -34,8 +34,8 @@ public class MySQLHelper {
 		// Mise à jour du statut des éléments précedents
 		SetAllInactive();
 		//Ajout
-		PreparedStatement rqst = connection.prepareStatement("INSERT INTO produit (id, description, format, origine, prix, unite, rabais, rabais_per, date_debut, date_fin, magasin, categorie, thumbnail, date_modif, actif) "
-				+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE prix=?, unite=?, rabais=?, rabais_per=?, date_debut=?, date_fin=?, date_modif=?, actif=?");
+		PreparedStatement rqst = connection.prepareStatement("INSERT INTO product (product_id, product_description, product_size, product_origin, product_price, product_qty, product_rebate, product_rebate_per, product_start, product_end, product_store, product_category, product_thumbnail, product_modif, product_active) "
+				+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE product_price=?, product_qty=?, product_rebate=?, product_rebate_per=?, product_start=?, product_end=?, product_modif=?, product_active=?");
 		
 		for(Product p : productList){
 			// INSERT
@@ -78,10 +78,10 @@ public class MySQLHelper {
 	public Date GetActualStartDate() throws SQLException{	
 		//Récupèrer le premier resultat actif
 		Statement rqst = connection.createStatement();
-		ResultSet result = rqst.executeQuery("SELECT date_debut FROM produit WHERE actif=1 LIMIT 1;");
+		ResultSet result = rqst.executeQuery("SELECT product_start FROM product WHERE product_active=1 LIMIT 1;");
 		rqst.closeOnCompletion();
 		if(result.next()){
-			return result.getDate("date_debut");
+			return result.getDate("product_start");
 		}
 		else{
 			return null;
@@ -89,7 +89,7 @@ public class MySQLHelper {
 	}
 	public void SetAllInactive() throws SQLException{
 		Statement rqst = connection.createStatement();
-		rqst.executeUpdate("UPDATE produit SET actif=0;");
+		rqst.executeUpdate("UPDATE product SET product_active=0;");
 		rqst.close();
 	}
 // OLD CODE
