@@ -8,7 +8,7 @@ import org.jsoup.nodes.Element;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SMEpicerieParser<T extends SMEpicerieProduct, S extends  SMEpicerieRebate> extends AbstractEpicerieParser {
+public class SMEpicerieParser extends AbstractEpicerieParser {
 
     private Element element;
     // Patterns as member so they do not need to compile for each product
@@ -162,8 +162,9 @@ public class SMEpicerieParser<T extends SMEpicerieProduct, S extends  SMEpicerie
         }
     }
     @Override
-    public T getObject(){
+    public SMEpicerieProduct getProducts(){
         Product product = new Product();
+
         // Id
         setProductId(product);
         // Description and note
@@ -181,6 +182,11 @@ public class SMEpicerieParser<T extends SMEpicerieProduct, S extends  SMEpicerie
         // Image
         setProductThumbnail(product);
 
+        //TODO : fix this
+        return null;
+    }
+    @Override
+    public SMEpicerieRebate getRebates(){
         //TODO : fix this
         return null;
     }
