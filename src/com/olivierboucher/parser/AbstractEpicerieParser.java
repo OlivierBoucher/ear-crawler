@@ -1,9 +1,13 @@
 package com.olivierboucher.parser;
-import com.olivierboucher.model.EpicerieElement;
-import org.jsoup.*;
+
+import com.olivierboucher.model.EpicerieProduct;
 import org.jsoup.nodes.Element;
 
-public abstract class AbstractEpicerieParser<T extends EpicerieElement> {
-    public abstract T getProducts();
-    public abstract T getRebates();
+public abstract class AbstractEpicerieParser {
+    protected Element element;
+    public abstract EpicerieProduct getProduct();
+
+    public void setElement(Element element){
+        this.element = element;
+    }
 }

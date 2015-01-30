@@ -18,7 +18,7 @@ public class Main {
 		
 		if(NeedsUpdate()){
 			System.out.print("Update required: " + df.format(new Date()) + "\n");
-	        CrawlerEpicerie crawler = new CrawlerEpicerie();
+	        EpicerieCrawler crawler = new EpicerieCrawler();
 	        Date start = new Date();
 	        System.out.print("Starting job: " + df.format(start)+"\n");
 	        CrawlerJobResult<Product> result  = crawler.StartJob();
@@ -57,8 +57,8 @@ public class Main {
 	    return timeUnit.convert(diffInMillies,TimeUnit.MILLISECONDS);
 	}
 	private static boolean NeedsUpdate(){
-		CrawlerEpicerie crawler = new CrawlerEpicerie();
-		Date online_date = crawler.GetFirstProductAvailable().getStart();
+		EpicerieCrawler crawler = new EpicerieCrawler();
+		Date online_date = crawler.SMGetFirstProductAvailable().getStart();
 		Date db_date = null;
 		// Get date from database
 		helper.Connect();
