@@ -148,6 +148,7 @@ public class CrawlerEpicerie extends Crawler {
 		
 		int id = -1;
 		String description = "Non disponible";
+		String specialNote = "";
 		String format = "Non disponible";
 		String origin = "Non disponible";
 		double price = 0;
@@ -180,7 +181,26 @@ public class CrawlerEpicerie extends Crawler {
 		// Description
 		if(element.select("[width=230] > a, [width=228] > a").first() != null){
 			description = element.select("[width=230] > a, [width=228] > a").first().text();
-		}
+			//TODO : Do something with specialNote in the future
+			/*Special note regexes
+			* Combined 		(.+)(\* Voir.+|\* Jusqu.+|\* Excepté.+|\* Achetez-en.+|\* Bonus.+|Économisez.+|Limite.+|Achetez-en.+)
+			* Économisez [..] -> 		(.+)(Économisez.+)
+			* Limite de [..] -> 		(.+)(Limite.+)
+			* Achetez-en [..] -> 		(.+)(Achetez-en.+)
+			*  Stuff with asterix before
+			* * Achetez-en [..] -> 		(.+)(\* Achetez-en.+)
+			* * Bonus [] -> 			(.+)(\* Bonus.+)
+			* * Excepté [] -> 			(.+)(\* Excepté.+)
+			* * Jusqu'a [] -> 			(.+)(\* Jusqu.+)
+			* * Voir [] -> 			  	(.+)(\* Voir.+)
+			* */
+			Pattern productWithNote = Pattern.compile("(.+)(\\* Voir.+|\\* Jusqu.+|\\* Excepté.+|\\* Achetez-en.+|\\* Bonus.+|Économisez.+|Limite.+|Achetez-en.+)");
+			Matcher m = productWithNote.matcher(description);
+			if(m.find()){
+				description = m.group(1);
+				specialNote = m.group(2);
+			}
+ 		}
 		// Format
 		if(element.select("td[width=76]").first() != null){
 			format = element.select("td[width=76]").first().text();
