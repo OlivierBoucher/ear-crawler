@@ -1,6 +1,7 @@
 package com.olivierboucher.ear;
 import com.olivierboucher.crawler.*;
 
+import com.olivierboucher.parser.impl.SMEpicerieParser;
 import org.jsoup.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,10 +18,10 @@ public class CrawlerEpicerie extends Crawler<Product> {
 	private List<Category> categories;
 	private List<Product> products;
 	private Common.CrawlerResult result;
-	private ParserEpicerie parser;
+	private SMEpicerieParser parser;
 	
 	public CrawlerEpicerie(){
-		parser = new ParserEpicerie();
+		parser = new SMEpicerieParser();
 		products = new ArrayList<Product>();
 		result = Common.CrawlerResult.Incomplete;
 		

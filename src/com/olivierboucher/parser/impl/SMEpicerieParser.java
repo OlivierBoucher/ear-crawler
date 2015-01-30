@@ -1,11 +1,14 @@
-package com.olivierboucher.ear;
-import com.olivierboucher.parser.Parser;
+package com.olivierboucher.parser.impl;
+import com.olivierboucher.ear.Product;
+import com.olivierboucher.model.impl.SMEpicerieProduct;
+import com.olivierboucher.model.impl.SMEpicerieRebate;
+import com.olivierboucher.parser.AbstractEpicerieParser;
 import org.jsoup.nodes.Element;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ParserEpicerie extends Parser<Product> {
+public class SMEpicerieParser<T extends SMEpicerieProduct, S extends  SMEpicerieRebate> extends AbstractEpicerieParser {
 
     private Element element;
     // Patterns as member so they do not need to compile for each product
@@ -16,7 +19,7 @@ public class ParserEpicerie extends Parser<Product> {
     private Pattern priceCaisse = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?caisse");
     private Pattern pricePoid = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?lb[\\s]?\\d+[.]\\d{2}[\\s]?\\/[\\s]?kg");
 
-    public ParserEpicerie(){
+    public SMEpicerieParser(){
     }
 
     private void setProductId(Product product){
@@ -159,7 +162,7 @@ public class ParserEpicerie extends Parser<Product> {
         }
     }
     @Override
-    public Product getObject(){
+    public T getObject(){
         Product product = new Product();
         // Id
         setProductId(product);
@@ -178,8 +181,8 @@ public class ParserEpicerie extends Parser<Product> {
         // Image
         setProductThumbnail(product);
 
-
-        return product;
+        //TODO : fix this
+        return null;
     }
     public void setElement(Element element){
         this.element = element;
