@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.olivierboucher.crawler.Common;
 import com.olivierboucher.crawler.CrawlerJobResult;
+import com.olivierboucher.model.EpicerieProduct;
 
 public class Main {
 	
@@ -21,7 +22,7 @@ public class Main {
 	        EpicerieCrawler crawler = new EpicerieCrawler();
 	        Date start = new Date();
 	        System.out.print("Starting job: " + df.format(start)+"\n");
-	        CrawlerJobResult<Product> result  = crawler.StartJob();
+	        CrawlerJobResult<EpicerieProduct> result  = crawler.StartJob();
 	        if(result.getResult() == Common.CrawlerResult.Complete){
 	        	Date finish = new Date();
 	        	System.out.print("Finishing job: " + df.format(new Date())+"\n");
