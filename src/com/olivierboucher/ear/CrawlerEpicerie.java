@@ -9,18 +9,18 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
-public class CrawlerEpicerie extends Crawler {
+public class CrawlerEpicerie extends Crawler<Product> {
 	
 	private List<Vendor> vendors;
 	private List<Category> categories;
 	private List<Product> products;
 	private Common.CrawlerResult result;
+	private ParserEpicerie parser;
 	
 	public CrawlerEpicerie(){
+		parser = new ParserEpicerie();
 		products = new ArrayList<Product>();
 		result = Common.CrawlerResult.Incomplete;
 		
@@ -126,177 +126,7 @@ public class CrawlerEpicerie extends Crawler {
 		
 	}
 	private Product ExtractProduct(Element element){
-		/*
-		 * Regexes 
-		 * 
-		 * 16.99 / ch.             -> / \d+.\d{2}[[:space:]]?\/[[:space:]]?ch. /
-		 * 16.99 / sac             -> / \d+.\d{2}[[:space:]]?\/[[:space:]]?sac /
-		 * 16.99 / pqt             -> / \d+.\d{2}[[:space:]]?\/[[:space:]]?pqt /
-		 * 5 / 5.99               -> / \d+[[:space:]]?\/[[:space:]]\d+.\d{2} /
-		 * 24.99 / caisse         -> / \d+.\d{2}[[:space:]]?\/[[:space:]]?caisse /
-		 * 5.99 / lb 13.58 / kg   -> \d+.\d{2}[[:space:]]?\/[[:space:]]?lb[[:space:]]?\d+.\d{2}[[:space:]]?\/[[:space:]]?kg
-		 * 
-		 * */
-		// Patterns des prix
-		Pattern priceCH = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?ch");
-		Pattern priceSac = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?sac");
-		Pattern pricePqt = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?pqt");
-		Pattern priceMulti = Pattern.compile("\\d+[\\s]?\\/[\\s]\\d+[.]\\d{2}");
-		Pattern priceCaisse = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?caisse");
-		Pattern pricePoid = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?lb[\\s]?\\d+[.]\\d{2}[\\s]?\\/[\\s]?kg");
-		
-		
-		int id = -1;
-		String description = "Non disponible";
-		String specialNote = "";
-		String format = "Non disponible";
-		String origin = "Non disponible";
-		double price = 0;
-		int qty = 0;
-		double rebate = 0;
-		int rebate_percent = 0;
-		String start = "Non disponible";
-		String end = "Non disponible";
-		String imgLink = "Non disponible";
-		
-		// Id
-		if(element.select("a.dslink") != null){
-			if(element.select("a.dslink").first().attr("onClick") != null){
-				String rawId = element.select("a.dslink").first().attr("onClick");
-				int indexOfIdEQ = rawId.indexOf("id=") + 3;
-				String sId = "";
-				for(int i = indexOfIdEQ; i<rawId.length(); i++){
-					char charAt = rawId.charAt(i);
-					
-					if(charAt >= '0' && charAt <= '9'){
-						sId += charAt;
-					}
-					else{
-						break;
-					}
-				}
-				id = Integer.parseInt(sId);
-			}
-		}
-		// Description
-		if(element.select("[width=230] > a, [width=228] > a").first() != null){
-			description = element.select("[width=230] > a, [width=228] > a").first().text();
-			//TODO : Do something with specialNote in the future
-			/*Special note regexes
-			* Combined 		(.+)(\* Voir.+|\* Jusqu.+|\* Excepté.+|\* Achetez-en.+|\* Bonus.+|Économisez.+|Limite.+|Achetez-en.+)
-			* Économisez [..] -> 		(.+)(Économisez.+)
-			* Limite de [..] -> 		(.+)(Limite.+)
-			* Achetez-en [..] -> 		(.+)(Achetez-en.+)
-			*  Stuff with asterix before
-			* * Achetez-en [..] -> 		(.+)(\* Achetez-en.+)
-			* * Bonus [] -> 			(.+)(\* Bonus.+)
-			* * Excepté [] -> 			(.+)(\* Excepté.+)
-			* * Jusqu'a [] -> 			(.+)(\* Jusqu.+)
-			* * Voir [] -> 			  	(.+)(\* Voir.+)
-			* */
-			Pattern productWithNote = Pattern.compile("(.+)(\\* Voir.+|\\* Jusqu.+|\\* Excepté.+|\\* Achetez-en.+|\\* Bonus.+|Économisez.+|Limite.+|Achetez-en.+)");
-			Matcher m = productWithNote.matcher(description);
-			if(m.find()){
-				description = m.group(1);
-				specialNote = m.group(2);
-			}
- 		}
-		// Format
-		if(element.select("td[width=76]").first() != null){
-			format = element.select("td[width=76]").first().text();
-		}
-		// Origine
-		if(element.select("td[width=92]").first() != null){
-			origin = element.select("td[width=92]").first().text();
-		}
-		// Prix
-		if(element.select("td[width=72]").first() != null){
-			String priceUnitS = element.select("td[width=72]").first().text();
-			// Matchers
-			Matcher mPriceCH = priceCH.matcher(priceUnitS);
-			Matcher mPricePqt = pricePqt.matcher(priceUnitS);
-			Matcher mPriceSac = priceSac.matcher(priceUnitS);
-			Matcher mPriceMulti = priceMulti.matcher(priceUnitS);
-			Matcher mPriceCaisse = priceCaisse.matcher(priceUnitS);
-			Matcher mPricePoid = pricePoid.matcher(priceUnitS);
-			//Traitement en fonction du type d'item
-			if(mPriceCH.find()){
-				qty = 1;
-				priceUnitS = mPriceCH.group(0);
-				String priceS = priceUnitS.split("/")[0].trim();
-				price = Double.parseDouble(priceS);
-				
-			}
-			else if(mPricePqt.find()){
-				qty = Product.QTY_PQT;
-				priceUnitS = mPricePqt.group(0);
-				String priceS = priceUnitS.split("/")[0].trim();
-				price = Double.parseDouble(priceS);
-			}
-			else if(mPriceSac.find()){
-				qty = Product.QTY_SAC;
-				priceUnitS = mPriceSac.group(0);
-				String priceS = priceUnitS.split("/")[0].trim();
-				price = Double.parseDouble(priceS);
-			}
-			else if(mPriceMulti.find()){
-				priceUnitS = mPriceMulti.group(0);
-				String[] split = priceUnitS.split("/");
-				qty = Integer.parseInt(split[0].trim());
-				price = Double.parseDouble(split[1].trim());
-			}
-			else if(mPriceCaisse.find()){
-				qty = Product.QTY_CAISSE;
-				priceUnitS = mPriceCaisse.group(0);
-				String priceS = priceUnitS.split("/")[0].trim();
-				price = Double.parseDouble(priceS);
-			}
-			else if(mPricePoid.find()){
-				qty = Product.QTY_POIDS;
-				priceUnitS = mPricePoid.group(0);
-				String priceS = priceUnitS.split("/")[0].trim();
-				price = Double.parseDouble(priceS);
-			}
-		}
-		// Rabais
-		if(element.select("td[width=65]").first() != null){
-			String[] splitted = element.select("td[width=65]").first().text().split("[$]");
-			
-			// Rabais en dollars
-			String sRebate = "";
-			for(int i = 0; i<splitted[0].length(); i++){
-				char charAt = splitted[0].charAt(i);
-				
-				if((charAt >= '0' && charAt <= '9') || charAt == '.'){
-					sRebate += charAt;
-				}
-			}
-			rebate = Double.parseDouble(sRebate);
-			// Rabais en pourcent
-			String sRebatePer = "";
-			for(int i = 0; i<splitted[1].length(); i++){
-				char charAt = splitted[1].charAt(i);
-				
-				if(charAt >= '0' && charAt <= '9'){
-					sRebatePer += charAt;
-				}
-			}
-			rebate_percent = Integer.parseInt(sRebatePer);
-		}
-		// Dates
-		if(element.select("td[width=60]").first() != null){
-			String bothDates = element.select("td[width=60]").first().html();
-			bothDates = bothDates.replace("&nbsp;", " ");
-			String[] dateArray = bothDates.split("<br>");
-			start = dateArray[0];
-			end = dateArray[1];			
-		}
-		// Image
-		if(element.select("img").first() != null){
-			imgLink = element.select("img").first().attr("src");
-		}
-		
-		
-		return new Product(id, description, format, origin, price, qty, rebate,rebate_percent, start, end, imgLink);
+		parser.setElement(element);
+		return parser.getObject();
 	}
 }

@@ -13,6 +13,7 @@ public class Product {
 	private Vendor vendor;
 	private Category category;
 	private String description;
+	private String note;
 	private String size;
 	private String origin;
 	private double price;
@@ -248,4 +249,12 @@ public class Product {
 			return product1.getId() - product2.getId();
 		}
 	};
+
+	public String getNote() {
+		return note;
+	}
+
+	public void setNote(String note) {
+		this.note = note;
+	}
 }
