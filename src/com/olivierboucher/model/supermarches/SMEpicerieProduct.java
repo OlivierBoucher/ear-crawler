@@ -9,6 +9,8 @@ public class SMEpicerieProduct extends EpicerieProduct {
     }
     @Override
     public SMEpicerieRebate getRebate(){
-        return (SMEpicerieRebate)this.getRebate();
+        return (SMEpicerieRebate)this.rebate;
     }
+    @Override
+    public SMEpicerieCategory getCategory(){return (SMEpicerieCategory)this.category;}
 }

@@ -5,16 +5,16 @@ package com.olivierboucher.model;
  * Created by olivier on 1/30/15.
  */
 public abstract class EpicerieProduct extends EpicerieElement {
-    private int id;
-    private String description;
-    private String note;
-    private String size;
-    private String origin;
-    private String thumbnail;
+    protected int id;
+    protected String description;
+    protected String note;
+    protected String size;
+    protected String origin;
+    protected String thumbnail;
 
-    private EpicerieCategory category;
-    private EpicerieStore store;
-    private EpicerieRebate rebate;
+    protected EpicerieCategory category;
+    protected EpicerieStore store;
+    protected EpicerieRebate rebate;
 
     public EpicerieCategory getCategory(){
         return this.category;

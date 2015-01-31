@@ -48,7 +48,7 @@ public class SMEpicerieParser extends AbstractEpicerieParser {
     private void setProductDescription(SMEpicerieProduct product){
         if(element.select("[width=230] > a, [width=228] > a").first() != null){
             String description;
-            description = element.select("[width=230] > a, [width=228] > a").first().text();
+            description = element.select("[width=230] > a, [width=228] > a").first().text().trim();
             Pattern productWithNote = Pattern.compile(
                     "(.+)(\\*\\sVoir.+|\\*\\sJusqu.+|\\*\\sExcepté.+|\\*\\sAchetez-en.+|\\*\\sBonus.+|" +
                             "Économisez.+|Limite.+|Achetez-en.+|Jusqu.+|Voir\\svari.+|Provenant.+|Catégorie.+|" +
@@ -56,9 +56,13 @@ public class SMEpicerieParser extends AbstractEpicerieParser {
 
             Matcher m = productWithNote.matcher(description);
             if(m.find()){
+                String tes = m.group(0);
+                String test = m.group(1);
+                String testt = m.group(2);
                 product.setDescription(m.group(1));
                 product.setNote(m.group(2));
-            }else{
+            }
+            else{
                 product.setDescription(description);
                 product.setNote("");
             }

@@ -6,11 +6,20 @@ import java.util.Date;
  * Created by olivier on 1/30/15.
  */
 public abstract class EpicerieRebate extends EpicerieElement {
-    private double price;
-    private double rebate;
-    private int rebate_percent;
-    private Date start;
-    private Date end;
+    protected double price;
+    protected double rebate;
+    protected int rebate_percent;
+    protected Date start;
+    protected Date end;
+    protected int quantity;
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
 
     public double getPrice() {
         return price;

@@ -12,7 +12,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -21,16 +23,23 @@ public class EpicerieCrawler extends Crawler<EpicerieProduct> {
 	// Global stuff
 	private List<EpicerieProduct> products;
 	private Common.CrawlerResult globalResult;
+	private MySQLHelper helper;
 	// Supermarche related fields
 	private List<SMEpicerieStore> SMStores;
 	private List<SMEpicerieCategory> SMCategories;
 	private Common.CrawlerResult SMResult;
 	private SMEpicerieParser SMParser;
-	
+
 	public EpicerieCrawler(){
+		helper = new MySQLHelper();
 		products = new ArrayList<EpicerieProduct>();
 		//Initialize different websites here
-		InitializeSM();
+		try{
+			InitializeSM();
+		}
+		catch(SQLException e){
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -47,18 +56,20 @@ public class EpicerieCrawler extends Crawler<EpicerieProduct> {
 
 		return new CrawlerJobResult<EpicerieProduct>(products, resultMap);
 	}
+
 	public EpicerieProduct SMGetFirstProductAvailable(){
 		for(SMEpicerieStore store : SMStores){
 			for(SMEpicerieCategory category : SMCategories){
-				SMGetProductsFromCategory(store, category);
-				if(products.size() > 0){
-					return products.get(0);
+				List<EpicerieProduct> list = SMGetProductsFromCategory(store, category);
+				if(list.size() > 0){
+					return list.get(0);
 				}
 			}
 		}
 		return null;
 	}
-	private void SMGetProductsFromCategory(SMEpicerieStore store, SMEpicerieCategory category){
+	private List<EpicerieProduct> SMGetProductsFromCategory(SMEpicerieStore store, SMEpicerieCategory category){
+		List<EpicerieProduct> list = new ArrayList<EpicerieProduct>();
 		// Crawl code
 		try {
 			int page = 1;
@@ -73,14 +84,14 @@ public class EpicerieCrawler extends Crawler<EpicerieProduct> {
 				sb.append(page);
 
 				Document doc = Jsoup.connect(sb.toString()).get();
-				
+
 				if(doc.select("tbody tr [onmouseover=this.bgColor = '#FFFFD9']").first() != null){
 					Elements elem_items = doc.select("tbody tr [onmouseover=this.bgColor = '#FFFFD9']");
 					for(Element element : elem_items){
 						EpicerieProduct product = ExtractProduct(element, SMParser);
 						product.setCategory(category);
 						product.setStore(store);
-						products.add(product);
+						list.add(product);
 					}
 					page++;
 				}
@@ -88,60 +99,55 @@ public class EpicerieCrawler extends Crawler<EpicerieProduct> {
 					doContinue = false;
 				}
 			}
-			
-		} 
+			return list;
+		}
 		catch (IOException ioe) {
 			SMResult = Common.CrawlerResult.NetworkError;
+			return null;
 		}
-
-		
 	}
 	private EpicerieProduct ExtractProduct(Element element, AbstractEpicerieParser parser){
 		parser.setElement(element);
 		return parser.getProduct();
 	}
 	private void CrawlSM(){
-		for(SMEpicerieStore store : SMStores){
-			for(SMEpicerieCategory category : SMCategories){
-				SMGetProductsFromCategory(store, category);
+		if(SMNeedsUpdate()) {
+			for (SMEpicerieStore store : SMStores) {
+				for (SMEpicerieCategory category : SMCategories) {
+					products.addAll(SMGetProductsFromCategory(store, category));
+				}
 			}
+			SMResult = (SMResult == Common.CrawlerResult.Incomplete) ? Common.CrawlerResult.Complete : SMResult;
 		}
-		SMResult = (SMResult == Common.CrawlerResult.Incomplete) ? Common.CrawlerResult.Complete : SMResult;
+		else{
+			SMResult = Common.CrawlerResult.UpToDate;
+		}
 	}
-	private void InitializeSM(){
+	private void InitializeSM() throws SQLException{
 		SMResult = Common.CrawlerResult.Incomplete;
 		SMParser = new SMEpicerieParser();
-		//TODO : Load theses from database
-		SMStores = new ArrayList<SMEpicerieStore>();
-		SMStores.add(new SMEpicerieStore("IGA"));
-		SMStores.add(new SMEpicerieStore("LOBLAWS"));
-		SMStores.add(new SMEpicerieStore("METRO"));
-		SMStores.add(new SMEpicerieStore("MAXI"));
-		SMStores.add(new SMEpicerieStore("SUPER C"));
-		// TODO : Same
-		SMCategories = new ArrayList<SMEpicerieCategory>();
-		SMCategories.add (new SMEpicerieCategory(612, "Aliments surgelés"));
-		SMCategories.add (new SMEpicerieCategory(3, "Bières et vins"));
-		SMCategories.add (new SMEpicerieCategory(4, "Biscuits, collations et friandises"));
-		SMCategories.add (new SMEpicerieCategory(5, "Boissons, eau et jus"));
-		SMCategories.add (new SMEpicerieCategory(6, "Boulangerie et pâtisserie"));
-		SMCategories.add (new SMEpicerieCategory(8, "Café, thé et tisanes"));
-		SMCategories.add (new SMEpicerieCategory(16, "Céréales, gruau et riz"));
-		SMCategories.add (new SMEpicerieCategory(9, "Charcuterie"));
-		SMCategories.add (new SMEpicerieCategory(340, "Condiments, huiles et sauces"));
-		SMCategories.add (new SMEpicerieCategory(10,"Confitures, tartinades et sirops"));
-		SMCategories.add (new SMEpicerieCategory(452, "Conserves, prêt-à-manger et soupes"));
-		SMCategories.add (new SMEpicerieCategory(11, "Fruits de mer et poissons"));
-		SMCategories.add (new SMEpicerieCategory(12, "Fruits, légumes et noix"));
-		SMCategories.add (new SMEpicerieCategory(13, "Pâtes, farine et oeufs"));
-		SMCategories.add (new SMEpicerieCategory(15, "Produits laitiers"));
-		SMCategories.add (new SMEpicerieCategory(17,"Viandes"));
-		SMCategories.add (new SMEpicerieCategory(18, "Volaille"));
-		SMCategories.add (new SMEpicerieCategory(23,"Contenants, outils et papiers"));
-		SMCategories.add (new SMEpicerieCategory(22, "Produits ménagers"));
-		SMCategories.add (new SMEpicerieCategory(20, "Produits pour les animaux"));
-		SMCategories.add (new SMEpicerieCategory(648,"Produits pour les bébés"));
-		SMCategories.add (new SMEpicerieCategory(21, "Soins du corps"));
-		SMCategories.add (new SMEpicerieCategory(520, "Divers"));
+		helper.Connect();
+		SMStores = helper.SMGetStoreList();
+		SMCategories = helper.SMGetCategoryList();
+		helper.Disconnect();
+	}
+	private  boolean SMNeedsUpdate(){
+		Date online_date = SMGetFirstProductAvailable().getRebate().getStart();
+		Date db_date = null;
+		// Get date from database
+		helper.Connect();
+		try {
+			db_date = helper.SMGetActualStartDate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		helper.Disconnect();
+		// Comparaison
+		if(db_date == null || !(db_date.equals(online_date))){
+			return true;
+		}
+		else{
+			return false;
+		}
 	}
 }

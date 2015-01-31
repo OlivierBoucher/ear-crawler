@@ -4,6 +4,7 @@ public class Common {
 	
 	public static enum CrawlerResult{
 		Complete,
+		UpToDate,
 		Incomplete,
 		NetworkError,
 		BadData	
