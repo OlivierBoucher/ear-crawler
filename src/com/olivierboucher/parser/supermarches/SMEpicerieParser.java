@@ -1,9 +1,7 @@
 package com.olivierboucher.parser.supermarches;
-import com.olivierboucher.model.EpicerieProduct;
-import com.olivierboucher.model.EpicerieRebate;
 import com.olivierboucher.model.supermarches.SMEpicerieProduct;
 import com.olivierboucher.model.supermarches.SMEpicerieRebate;
-import com.olivierboucher.parser.AbstractEpicerieParser;
+import com.olivierboucher.parser.EpicerieParser;
 import org.jsoup.nodes.Element;
 
 import java.text.DateFormat;
@@ -13,7 +11,7 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SMEpicerieParser extends AbstractEpicerieParser {
+public class SMEpicerieParser extends EpicerieParser {
     // Patterns as member so they do not need to compile for each product
     private Pattern priceCH = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?ch");
     private Pattern priceSac = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?sac");

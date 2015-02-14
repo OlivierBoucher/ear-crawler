@@ -1,10 +1,11 @@
-package com.olivierboucher.ear;
+package com.olivierboucher.crawler.supermarches;
 import com.olivierboucher.crawler.*;
 
+import com.olivierboucher.ear.MySQLHelper;
 import com.olivierboucher.model.EpicerieProduct;
 import com.olivierboucher.model.supermarches.SMEpicerieCategory;
 import com.olivierboucher.model.supermarches.SMEpicerieStore;
-import com.olivierboucher.parser.AbstractEpicerieParser;
+import com.olivierboucher.parser.EpicerieParser;
 import com.olivierboucher.parser.supermarches.SMEpicerieParser;
 import org.jsoup.*;
 import org.jsoup.nodes.Document;
@@ -15,27 +16,20 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
 
-public class EpicerieCrawler extends Crawler<EpicerieProduct> {
-	// Global stuff
-	private List<EpicerieProduct> products;
-	private Common.CrawlerResult globalResult;
-	private MySQLHelper helper;
-	// Supermarche related fields
-	private List<SMEpicerieStore> SMStores;
-	private List<SMEpicerieCategory> SMCategories;
-	private Common.CrawlerResult SMResult;
-	private SMEpicerieParser SMParser;
+public class SMCrawler extends EpicerieCrawler {
 
-	public EpicerieCrawler(){
+	private MySQLHelper helper;
+	private List<SMEpicerieStore> stores;
+	private List<SMEpicerieCategory> categories;
+
+	public SMCrawler(){
 		helper = new MySQLHelper();
 		products = new ArrayList<EpicerieProduct>();
-		//Initialize different websites here
 		try{
-			InitializeSM();
+			Initialize();
 		}
 		catch(SQLException e){
 			e.printStackTrace();
@@ -49,18 +43,15 @@ public class EpicerieCrawler extends Crawler<EpicerieProduct> {
 	@Override
 	public CrawlerJobResult<EpicerieProduct> StartJob() {
 		// TODO : Verify internet connection
-		CrawlSM();
-		// Build result map
-		HashMap<String, Common.CrawlerResult> resultMap = new HashMap();
-		resultMap.put("SM", SMResult);
+		Crawl();
 
-		return new CrawlerJobResult<EpicerieProduct>(products, resultMap);
+		return new CrawlerJobResult<EpicerieProduct>(products, result);
 	}
 
 	public EpicerieProduct SMGetFirstProductAvailable(){
-		for(SMEpicerieStore store : SMStores){
-			for(SMEpicerieCategory category : SMCategories){
-				List<EpicerieProduct> list = SMGetProductsFromCategory(store, category);
+		for(SMEpicerieStore store : stores){
+			for(SMEpicerieCategory category : categories){
+				List<EpicerieProduct> list = GetProductsFromCategory(store, category);
 				if(list.size() > 0){
 					return list.get(0);
 				}
@@ -68,7 +59,7 @@ public class EpicerieCrawler extends Crawler<EpicerieProduct> {
 		}
 		return null;
 	}
-	private List<EpicerieProduct> SMGetProductsFromCategory(SMEpicerieStore store, SMEpicerieCategory category){
+	private List<EpicerieProduct> GetProductsFromCategory(SMEpicerieStore store, SMEpicerieCategory category){
 		List<EpicerieProduct> list = new ArrayList<EpicerieProduct>();
 		// Crawl code
 		try {
@@ -88,7 +79,7 @@ public class EpicerieCrawler extends Crawler<EpicerieProduct> {
 				if(doc.select("tbody tr [onmouseover=this.bgColor = '#FFFFD9']").first() != null){
 					Elements elem_items = doc.select("tbody tr [onmouseover=this.bgColor = '#FFFFD9']");
 					for(Element element : elem_items){
-						EpicerieProduct product = ExtractProduct(element, SMParser);
+						EpicerieProduct product = ExtractProduct(element, parser);
 						product.setCategory(category);
 						product.setStore(store);
 						list.add(product);
@@ -102,36 +93,36 @@ public class EpicerieCrawler extends Crawler<EpicerieProduct> {
 			return list;
 		}
 		catch (IOException ioe) {
-			SMResult = Common.CrawlerResult.NetworkError;
+			result = Common.CrawlerResult.NetworkError;
 			return null;
 		}
 	}
-	private EpicerieProduct ExtractProduct(Element element, AbstractEpicerieParser parser){
+	private EpicerieProduct ExtractProduct(Element element, EpicerieParser parser){
 		parser.setElement(element);
 		return parser.getProduct();
 	}
-	private void CrawlSM(){
-		if(SMNeedsUpdate()) {
-			for (SMEpicerieStore store : SMStores) {
-				for (SMEpicerieCategory category : SMCategories) {
-					products.addAll(SMGetProductsFromCategory(store, category));
+	private void Crawl(){
+		if(NeedsUpdate()) {
+			for (SMEpicerieStore store : stores) {
+				for (SMEpicerieCategory category : categories) {
+					products.addAll(GetProductsFromCategory(store, category));
 				}
 			}
-			SMResult = (SMResult == Common.CrawlerResult.Incomplete) ? Common.CrawlerResult.Complete : SMResult;
+			result = (result == Common.CrawlerResult.Incomplete) ? Common.CrawlerResult.Complete : result;
 		}
 		else{
-			SMResult = Common.CrawlerResult.UpToDate;
+			result = Common.CrawlerResult.UpToDate;
 		}
 	}
-	private void InitializeSM() throws SQLException{
-		SMResult = Common.CrawlerResult.Incomplete;
-		SMParser = new SMEpicerieParser();
+	private void Initialize() throws SQLException{
+		result = Common.CrawlerResult.Incomplete;
+		parser = new SMEpicerieParser();
 		helper.Connect();
-		SMStores = helper.SMGetStoreList();
-		SMCategories = helper.SMGetCategoryList();
+		stores = helper.SMGetStoreList();
+		categories = helper.SMGetCategoryList();
 		helper.Disconnect();
 	}
-	private  boolean SMNeedsUpdate(){
+	private boolean NeedsUpdate(){
 		Date online_date = SMGetFirstProductAvailable().getRebate().getStart();
 		Date db_date = null;
 		// Get date from database
