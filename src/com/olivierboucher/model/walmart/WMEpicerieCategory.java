@@ -1,7 +1,9 @@
 package com.olivierboucher.model.walmart;
 
-/**
- * Created by olivierboucher on 15-02-14.
- */
-public class WMEpicerieCategory {
+import com.olivierboucher.model.EpicerieCategory;
+
+public class WMEpicerieCategory extends EpicerieCategory {
+    public WMEpicerieCategory(int id, String name, String slug, int productCategoryId){
+        super(id, name, slug, productCategoryId);
+    }
 }

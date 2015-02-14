@@ -1,7 +1,9 @@
 package com.olivierboucher.model.walmart;
 
-/**
- * Created by olivierboucher on 15-02-14.
- */
-public class WMEpicerieStore {
+import com.olivierboucher.model.EpicerieStore;
+
+public class WMEpicerieStore extends EpicerieStore {
+    public WMEpicerieStore(int id, String name){
+        super(id, name, null);
+    }
 }

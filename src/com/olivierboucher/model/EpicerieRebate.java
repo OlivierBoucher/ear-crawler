@@ -2,9 +2,6 @@ package com.olivierboucher.model;
 
 import java.util.Date;
 
-/**
- * Created by olivier on 1/30/15.
- */
 public abstract class EpicerieRebate extends EpicerieElement {
     protected double price;
     protected double rebate;

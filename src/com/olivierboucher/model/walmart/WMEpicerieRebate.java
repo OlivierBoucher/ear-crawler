@@ -1,7 +1,6 @@
 package com.olivierboucher.model.walmart;
 
-/**
- * Created by olivierboucher on 15-02-14.
- */
-public class WMEpicerieRebate {
+import com.olivierboucher.model.EpicerieRebate;
+
+public class WMEpicerieRebate extends EpicerieRebate {
 }

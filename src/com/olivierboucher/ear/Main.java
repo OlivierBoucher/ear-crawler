@@ -34,9 +34,9 @@ public class Main {
 					System.out.print("Job result: Complete (" + getDateDiff(start, finish, TimeUnit.SECONDS) + " seconds)\n");
 					//AddToDatabase(result, start, finish);
 					break;
-				case Incomplete:
-					break;
 				case UpToDate:
+					break;
+				case Incomplete:
 					break;
 				case NetworkError:
 					break;

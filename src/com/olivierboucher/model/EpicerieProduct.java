@@ -1,9 +1,6 @@
 package com.olivierboucher.model;
 
 
-/**
- * Created by olivier on 1/30/15.
- */
 public abstract class EpicerieProduct extends EpicerieElement {
     protected int id;
     protected String description;

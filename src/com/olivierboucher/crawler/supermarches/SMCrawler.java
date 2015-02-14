@@ -2,9 +2,9 @@ package com.olivierboucher.crawler.supermarches;
 import com.olivierboucher.crawler.*;
 
 import com.olivierboucher.ear.MySQLHelper;
+import com.olivierboucher.model.EpicerieCategory;
 import com.olivierboucher.model.EpicerieProduct;
-import com.olivierboucher.model.supermarches.SMEpicerieCategory;
-import com.olivierboucher.model.supermarches.SMEpicerieStore;
+import com.olivierboucher.model.EpicerieStore;
 import com.olivierboucher.parser.EpicerieParser;
 import com.olivierboucher.parser.supermarches.SMEpicerieParser;
 import org.jsoup.*;
@@ -20,10 +20,7 @@ import java.util.List;
 
 
 public class SMCrawler extends EpicerieCrawler {
-
-	private MySQLHelper helper;
-	private List<SMEpicerieStore> stores;
-	private List<SMEpicerieCategory> categories;
+	public static final int WEBSITE_ID = 1;
 
 	public SMCrawler(){
 		helper = new MySQLHelper();
@@ -44,13 +41,12 @@ public class SMCrawler extends EpicerieCrawler {
 	public CrawlerJobResult<EpicerieProduct> StartJob() {
 		// TODO : Verify internet connection
 		Crawl();
-
 		return new CrawlerJobResult<EpicerieProduct>(products, result);
 	}
 
-	public EpicerieProduct SMGetFirstProductAvailable(){
-		for(SMEpicerieStore store : stores){
-			for(SMEpicerieCategory category : categories){
+	public EpicerieProduct GetFirstProductAvailable(){
+		for(EpicerieStore store : stores){
+			for(EpicerieCategory category : categories){
 				List<EpicerieProduct> list = GetProductsFromCategory(store, category);
 				if(list.size() > 0){
 					return list.get(0);
@@ -59,7 +55,7 @@ public class SMCrawler extends EpicerieCrawler {
 		}
 		return null;
 	}
-	private List<EpicerieProduct> GetProductsFromCategory(SMEpicerieStore store, SMEpicerieCategory category){
+	private List<EpicerieProduct> GetProductsFromCategory(EpicerieStore store, EpicerieCategory category){
 		List<EpicerieProduct> list = new ArrayList<EpicerieProduct>();
 		// Crawl code
 		try {
@@ -68,9 +64,9 @@ public class SMCrawler extends EpicerieCrawler {
 			while(doContinue){
 				StringBuilder sb = new StringBuilder();
 				sb.append("http://www.supermarches.ca/pages/Aubaines.asp?vd=");
-				sb.append(store.getName());
+				sb.append(store.getSlug());
 				sb.append("&cid=");
-				sb.append(category.getId());
+				sb.append(category.getSlug());
 				sb.append("&page=");
 				sb.append(page);
 
@@ -103,8 +99,8 @@ public class SMCrawler extends EpicerieCrawler {
 	}
 	private void Crawl(){
 		if(NeedsUpdate()) {
-			for (SMEpicerieStore store : stores) {
-				for (SMEpicerieCategory category : categories) {
+			for (EpicerieStore store : stores) {
+				for (EpicerieCategory category : categories) {
 					products.addAll(GetProductsFromCategory(store, category));
 				}
 			}
@@ -118,12 +114,12 @@ public class SMCrawler extends EpicerieCrawler {
 		result = Common.CrawlerResult.Incomplete;
 		parser = new SMEpicerieParser();
 		helper.Connect();
-		stores = helper.SMGetStoreList();
-		categories = helper.SMGetCategoryList();
+		stores = helper.GetStoreList(WEBSITE_ID);
+		categories = helper.GetCategoryList(WEBSITE_ID);
 		helper.Disconnect();
 	}
 	private boolean NeedsUpdate(){
-		Date online_date = SMGetFirstProductAvailable().getRebate().getStart();
+		Date online_date = GetFirstProductAvailable().getRebate().getStart();
 		Date db_date = null;
 		// Get date from database
 		helper.Connect();

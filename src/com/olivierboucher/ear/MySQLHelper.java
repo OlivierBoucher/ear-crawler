@@ -1,9 +1,13 @@
 package com.olivierboucher.ear;
+import com.olivierboucher.crawler.supermarches.SMCrawler;
+import com.olivierboucher.crawler.walmart.WMCrawler;
 import com.olivierboucher.model.EpicerieCategory;
 import com.olivierboucher.model.EpicerieProduct;
 import com.olivierboucher.model.EpicerieStore;
 import com.olivierboucher.model.supermarches.SMEpicerieCategory;
 import com.olivierboucher.model.supermarches.SMEpicerieStore;
+import com.olivierboucher.model.walmart.WMEpicerieCategory;
+import com.olivierboucher.model.walmart.WMEpicerieStore;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -16,6 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 public class MySQLHelper {
+
 
 	private Connection connection;
 
@@ -40,7 +45,7 @@ public class MySQLHelper {
 		}
 	}
 	public void SendProductList(List<EpicerieProduct> productList) throws SQLException{
-		//Ajout
+
 		PreparedStatement rqst = connection.prepareStatement("CALL InsertProductAndRebate(?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
 		for(EpicerieProduct p : productList){
@@ -67,7 +72,7 @@ public class MySQLHelper {
 			rqst.setString(4, p.getSize());
 			rqst.setString(5, p.getOrigin());
 			rqst.setString(6, p.getThumbnail());
-			rqst.setInt(7,p.getCategory().getId());
+			rqst.setInt(7,p.getCategory().getProductCategoryId());
 			rqst.setInt(8, p.getStore().getId());
 			rqst.setDouble(9,p.getRebate().getPrice());
 			rqst.setDouble(10,p.getRebate().getRebate());
@@ -90,6 +95,7 @@ public class MySQLHelper {
 	}
 	public Date SMGetActualStartDate() throws SQLException{
 		//Récupèrer le premier resultat actif
+		// TODO : Stored procedure
 		Statement rqst = connection.createStatement();
 		ResultSet result = rqst.executeQuery("SELECT price_start FROM product_price WHERE price_active=1 LIMIT 1;");
 		rqst.closeOnCompletion();
@@ -100,23 +106,47 @@ public class MySQLHelper {
 			return null;
 		}
 	}
-	public List<SMEpicerieCategory> SMGetCategoryList() throws SQLException{
-		List<SMEpicerieCategory> list = new ArrayList<SMEpicerieCategory>();
-		Statement rqst = connection.createStatement();
-		ResultSet result = rqst.executeQuery("SELECT * FROM product_category");
+	public List<EpicerieCategory> GetCategoryList(int websiteId) throws SQLException{
+		List<EpicerieCategory> list = new ArrayList<EpicerieCategory>();
+		PreparedStatement rqst = connection.prepareStatement("SELECT * FROM website_category WHERE website_id=?");
+		rqst.setInt(1,websiteId);
+		ResultSet result = rqst.executeQuery();
 		rqst.closeOnCompletion();
-		while (result.next()){
-			list.add(new SMEpicerieCategory(result.getInt("category_id"), result.getString("category_name")));
+		switch(websiteId){
+			case SMCrawler.WEBSITE_ID:
+				while (result.next()){
+					list.add(new SMEpicerieCategory(result.getInt("category_id"), result.getString("category_name"), result.getString("category_slug"), result.getInt("product_category_id")));
+				}
+				break;
+			case WMCrawler.WEBSITE_ID:
+				while (result.next()){
+					list.add(new WMEpicerieCategory(result.getInt("category_id"), result.getString("category_name"), result.getString("category_slug"), result.getInt("product_category_id")));
+				}
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid website ID");
 		}
 		return list;
 	}
-	public List<SMEpicerieStore> SMGetStoreList() throws SQLException{
-		List<SMEpicerieStore> list = new ArrayList<SMEpicerieStore>();
-		Statement rqst = connection.createStatement();
-		ResultSet result = rqst.executeQuery("SELECT * FROM product_store");
+	public List<EpicerieStore> GetStoreList(int websiteId) throws SQLException{
+		List<EpicerieStore> list = new ArrayList<EpicerieStore>();
+		PreparedStatement rqst = connection.prepareStatement("SELECT * FROM product_store WHERE website_id=?");
+		rqst.setInt(1,websiteId);
+		ResultSet result = rqst.executeQuery();
 		rqst.closeOnCompletion();
-		while (result.next()){
-			list.add(new SMEpicerieStore(result.getInt("store_id"), result.getString("store_name")));
+		switch(websiteId){
+			case SMCrawler.WEBSITE_ID:
+				while (result.next()){
+					list.add(new SMEpicerieStore(result.getInt("store_id"), result.getString("store_name"), result.getString("store_slug")));
+				}
+				break;
+			case WMCrawler.WEBSITE_ID:
+				while (result.next()){
+					list.add(new WMEpicerieStore(result.getInt("store_id"), result.getString("store_name")));
+				}
+				break;
+			default:
+				throw new IllegalArgumentException("Invalid website ID");
 		}
 		return list;
 	}
