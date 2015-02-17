@@ -98,7 +98,7 @@ public class SMCrawler extends EpicerieCrawler {
 		return parser.getProduct();
 	}
 	private void Crawl(){
-		if(NeedsUpdate()) {
+		if(true) {
 			for (EpicerieStore store : stores) {
 				for (EpicerieCategory category : categories) {
 					products.addAll(GetProductsFromCategory(store, category));
