@@ -6,10 +6,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import com.olivierboucher.crawler.CrawlerJobResult;
 import com.olivierboucher.crawler.EpicerieCrawler;
 import com.olivierboucher.crawler.supermarches.SMCrawler;
+import com.olivierboucher.crawler.walmart.WMCrawler;
 import com.olivierboucher.model.EpicerieProduct;
 
 public class Main {
@@ -19,8 +21,10 @@ public class Main {
 	static List<EpicerieCrawler> crawlerList = new ArrayList<EpicerieCrawler>();
 
 	public static void main(String[] args) {
-		// Add crawlers here
-		crawlerList.add(new SMCrawler());
+        Initialize();
+		// Add crawlers here TODO : Maybe a factory would be nice instead (load websites from db, then foreach initialise)
+		//crawlerList.add(new SMCrawler());
+        crawlerList.add(new WMCrawler());
 		// This could be multithreaded as well
 		for(EpicerieCrawler crawler : crawlerList) {
 			Date start = new Date();
@@ -63,4 +67,69 @@ public class Main {
 		long diffInMillies = date2.getTime() - date1.getTime();
 		return timeUnit.convert(diffInMillies,TimeUnit.MILLISECONDS);
 	}
+    private static void Initialize(){
+        OsCheck.OSType ostype=OsCheck.getOperatingSystemType();
+
+        switch (ostype) {
+            case Windows:
+                System.setProperty("phantomjs.binary.path", "module/phantomjs-1_9_2/win/phantomjs.exe");
+                break;
+            case MacOS:
+                System.setProperty("phantomjs.binary.path", "module/phantomjs-1_9_2/mac/phantomjs");
+                break;
+            case Linux:
+                //if 32bit
+                if(System.getProperty("os.arch").contains("x86")){
+                    System.setProperty("phantomjs.binary.path", "module/phantomjs-1_9_2/linux32/phantomjs.exe");
+                }
+                else{
+                    System.setProperty("phantomjs.binary.path", "module/phantomjs-1_9_2/linux64/phantomjs.exe");
+                }
+                break;
+            case Other:
+                break;
+        }
+    }
+    /**
+     * helper class to check the operating system this Java VM runs in
+     *
+     * please keep the notes below as a pseudo-license
+     *
+     * http://stackoverflow.com/questions/228477/how-do-i-programmatically-determine-operating-system-in-java
+     * compare to http://svn.terracotta.org/svn/tc/dso/tags/2.6.4/code/base/common/src/com/tc/util/runtime/Os.java
+     * http://www.docjar.com/html/api/org/apache/commons/lang/SystemUtils.java.html
+     */
+    public static final class OsCheck {
+        /**
+         * types of Operating Systems
+         */
+        public enum OSType {
+            Windows, MacOS, Linux, Other
+        };
+
+        // cached result of OS detection
+        protected static OSType detectedOS;
+
+        /**
+         * detect the operating system from the os.name System property and cache
+         * the result
+         *
+         * @returns - the operating system detected
+         */
+        public static OSType getOperatingSystemType() {
+            if (detectedOS == null) {
+                String OS = System.getProperty("os.name", "generic").toLowerCase(Locale.ENGLISH);
+                if ((OS.indexOf("mac") >= 0) || (OS.indexOf("darwin") >= 0)) {
+                    detectedOS = OSType.MacOS;
+                } else if (OS.indexOf("win") >= 0) {
+                    detectedOS = OSType.Windows;
+                } else if (OS.indexOf("nux") >= 0) {
+                    detectedOS = OSType.Linux;
+                } else {
+                    detectedOS = OSType.Other;
+                }
+            }
+            return detectedOS;
+        }
+    }
 }
