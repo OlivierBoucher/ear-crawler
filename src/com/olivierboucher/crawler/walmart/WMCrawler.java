@@ -5,6 +5,7 @@ import com.olivierboucher.crawler.Common;
 import com.olivierboucher.crawler.Crawler;
 import com.olivierboucher.crawler.CrawlerJobResult;
 import com.olivierboucher.crawler.EpicerieCrawler;
+import com.olivierboucher.ear.Main;
 import com.olivierboucher.ear.MySQLHelper;
 import com.olivierboucher.model.EpicerieCategory;
 import com.olivierboucher.model.EpicerieProduct;
@@ -26,7 +27,9 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class WMCrawler extends EpicerieCrawler {
     public static final int WEBSITE_ID = 2;
@@ -87,16 +90,19 @@ public class WMCrawler extends EpicerieCrawler {
                     for(Element element : elem_items){
                         if (element.select("div.title > h1 > a").first() != null) {
                             String link = element.select("div.title > h1 > a").first().attr("href");
+                            Date start = new Date();
                             // Navigate to the product link
                             driver.get("http://www.walmart.ca" + link);
                             //Wait up to 5 secs to let the scripts run
                             // THIS CODE HAS TO BE TESTED
+
                             new WebDriverWait(driver, 5).until(new ExpectedCondition<Boolean>() {
                                 public Boolean apply(WebDriver driver) {
                                     JavascriptExecutor js = (JavascriptExecutor) driver;
                                     return (Boolean) js.executeScript("return jQuery.active == 0");
                                 }
                             });
+
                             Document prodDoc = Jsoup.parse(driver.getPageSource());
                             // Find the body where all infos are
                             if (prodDoc.select("#wrap").first() != null) {
@@ -106,6 +112,8 @@ public class WMCrawler extends EpicerieCrawler {
                                     product.setCategory(category);
                                     product.setStore(store);
                                     list.add(product);
+                                    Date end = new Date();
+                                    System.out.println("Waited " + Main.getDateDiff(start,end, TimeUnit.MILLISECONDS) + "ms");
                                 }
                             }
                         }
