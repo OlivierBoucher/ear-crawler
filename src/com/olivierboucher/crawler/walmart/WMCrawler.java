@@ -15,12 +15,11 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.*;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -31,6 +30,7 @@ import java.util.List;
 
 public class WMCrawler extends EpicerieCrawler {
     public static final int WEBSITE_ID = 2;
+    private WebDriver driver;
 
     public WMCrawler(){
         helper = new MySQLHelper();
@@ -71,9 +71,6 @@ public class WMCrawler extends EpicerieCrawler {
         try {
             int page = 1;
             Boolean doContinue = true;
-            DesiredCapabilities capabilities = new DesiredCapabilities();
-            capabilities.setCapability("phantomjs.page.settings.loadImages", false);
-            WebDriver driver = new PhantomJSDriver(capabilities);
 
             while (doContinue) {
                 StringBuilder sb = new StringBuilder();
@@ -82,49 +79,33 @@ public class WMCrawler extends EpicerieCrawler {
                 sb.append("+31+12");
                 sb.append("/page-");
                 sb.append(page);
-                // Pass the url to the phantom driver
-                // THIS CODE HAS TO BE TESTED
-                WebDriverWait wait = new WebDriverWait(driver,3);
-                wait.until(ExpectedConditions.not(ExpectedConditions.textToBePresentInElementLocated(By.className("price-current"),"")));
-                driver.get(sb.toString());
-                // We wait up to 5 secs to let the scripts run
-                Thread.sleep(5*1000);
 
-                Document listDoc = Jsoup.parse(driver.getPageSource());
+                Document listDoc = Jsoup.connect(sb.toString()).get();
 
                 if(listDoc.select("article.product").first() != null){
                     Elements elem_items = listDoc.select("article.product");
                     for(Element element : elem_items){
-                        // Check if price was is there
-                        if(element.select("div.price-was").first() != null) {
-                            String priceWas = element.select("div.price-was").first().text();
-                            if( priceWas != "") {
-                                System.out.println("Product has a rebate");
-                                // Find the link
-                                if (element.select("div.title > h1 > a").first() != null) {
-                                    System.out.println("Link found");
-                                    String link = element.select("div.title > h1 > a").first().attr("href");
-                                    // Navigate to the product link
-                                    driver.get("http://www.walmart.ca" + link);
-                                    //Wait up to 5 secs to let the scripts run
-                                    Thread.sleep(5 * 1000);
-                                    Document prodDoc = Jsoup.parse(driver.getPageSource());
-                                    // Find the body where all infos are
-                                    if (prodDoc.select("#wrap").first() != null) {
-                                        System.out.println("Wrap found");
-                                        Element prodElement = prodDoc.select("#wrap").first();
-                                        EpicerieProduct product = ExtractProduct(prodElement, parser);
-                                        if(product != null){
-                                            product.setCategory(category);
-                                            product.setStore(store);
-                                            list.add(product);
-                                            System.out.println("Product added " + list.size());
-                                        }
-                                        else{
-                                            System.out.println("Product denied");
-                                        }
-
-                                    }
+                        if (element.select("div.title > h1 > a").first() != null) {
+                            String link = element.select("div.title > h1 > a").first().attr("href");
+                            // Navigate to the product link
+                            driver.get("http://www.walmart.ca" + link);
+                            //Wait up to 5 secs to let the scripts run
+                            // THIS CODE HAS TO BE TESTED
+                            new WebDriverWait(driver, 5).until(new ExpectedCondition<Boolean>() {
+                                public Boolean apply(WebDriver driver) {
+                                    JavascriptExecutor js = (JavascriptExecutor) driver;
+                                    return (Boolean) js.executeScript("return jQuery.active == 0");
+                                }
+                            });
+                            Document prodDoc = Jsoup.parse(driver.getPageSource());
+                            // Find the body where all infos are
+                            if (prodDoc.select("#wrap").first() != null) {
+                                Element prodElement = prodDoc.select("#wrap").first();
+                                EpicerieProduct product = ExtractProduct(prodElement, parser);
+                                if(product != null){
+                                    product.setCategory(category);
+                                    product.setStore(store);
+                                    list.add(product);
                                 }
                             }
                         }
@@ -151,13 +132,13 @@ public class WMCrawler extends EpicerieCrawler {
         if(true) {
             for (EpicerieStore store : stores) {
                 for (EpicerieCategory category : categories) {
-                        List<EpicerieProduct> listFromCategory = GetProductsFromCategory(store, category);
-                        if (listFromCategory != null) {
-                            products.addAll(listFromCategory);
-                        } else {
-                            System.out.println(category.getName() + " caused a crash");
-                            return;
-                        }
+                    List<EpicerieProduct> listFromCategory = GetProductsFromCategory(store, category);
+                    if (listFromCategory != null) {
+                        products.addAll(listFromCategory);
+                    } else {
+                        System.out.println(category.getName() + " caused a crash");
+                        return;
+                    }
                     result = (result == Common.CrawlerResult.Incomplete) ? Common.CrawlerResult.Complete : result;
                 }
             }
@@ -173,6 +154,9 @@ public class WMCrawler extends EpicerieCrawler {
         stores = helper.GetStoreList(WEBSITE_ID);
         categories = helper.GetCategoryList(WEBSITE_ID);
         helper.Disconnect();
+        DesiredCapabilities capabilities = new DesiredCapabilities();
+        capabilities.setCapability("phantomjs.page.settings.loadImages", false);
+        driver = new PhantomJSDriver(capabilities);
     }
     private boolean NeedsUpdate(){
         return false;
