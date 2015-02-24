@@ -19,6 +19,7 @@ import org.jsoup.select.Elements;
 import org.openqa.selenium.*;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
+import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -70,12 +71,10 @@ public class WMCrawler extends EpicerieCrawler {
     }
     private List<EpicerieProduct> GetProductsFromCategory(EpicerieStore store, EpicerieCategory category){
         List<EpicerieProduct> list = new ArrayList<EpicerieProduct>();
-        // Crawl code
+
         try {
             int page = 1;
-            Boolean doContinue = true;
-
-            while (doContinue) {
+            for (boolean doContinue = true; doContinue; page++) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("http://www.walmart.ca/fr/epicerie/");
                 sb.append(category.getSlug());
@@ -92,10 +91,12 @@ public class WMCrawler extends EpicerieCrawler {
                             String link = element.select("div.title > h1 > a").first().attr("href");
                             Date start = new Date();
                             // Navigate to the product link
-                            driver.get("http://www.walmart.ca" + link);
+                            // TODO : Find a workaround, this line takes up to 8 secs
+                            // TODO: Shrunk it to 4.9 secs using a 55mbps connection.
+                            driver.get("http://www.walmart.ca/" + link);
+                            Date end = new Date();
+                            System.out.println("Waited " + Main.getDateDiff(start,end, TimeUnit.MILLISECONDS) + "ms");
                             //Wait up to 5 secs to let the scripts run
-                            // THIS CODE HAS TO BE TESTED
-
                             new WebDriverWait(driver, 5).until(new ExpectedCondition<Boolean>() {
                                 public Boolean apply(WebDriver driver) {
                                     JavascriptExecutor js = (JavascriptExecutor) driver;
@@ -112,13 +113,10 @@ public class WMCrawler extends EpicerieCrawler {
                                     product.setCategory(category);
                                     product.setStore(store);
                                     list.add(product);
-                                    Date end = new Date();
-                                    System.out.println("Waited " + Main.getDateDiff(start,end, TimeUnit.MILLISECONDS) + "ms");
                                 }
                             }
                         }
                     }
-                    page++;
                 }
                 else{
                     doContinue = false;
@@ -137,6 +135,7 @@ public class WMCrawler extends EpicerieCrawler {
         return parser.getProduct();
     }
     private void Crawl(){
+        // TODO : Modify for needsUpdate once testing done
         if(true) {
             for (EpicerieStore store : stores) {
                 for (EpicerieCategory category : categories) {
@@ -162,8 +161,15 @@ public class WMCrawler extends EpicerieCrawler {
         stores = helper.GetStoreList(WEBSITE_ID);
         categories = helper.GetCategoryList(WEBSITE_ID);
         helper.Disconnect();
+
         DesiredCapabilities capabilities = new DesiredCapabilities();
         capabilities.setCapability("phantomjs.page.settings.loadImages", false);
+
+        Proxy proxy = new Proxy();
+        //TODO : Do some tests with a custom proxy, rejecting any scripts/css/images
+        proxy.setHttpProxy("");
+        capabilities.setCapability(CapabilityType.PROXY, proxy);
+
         driver = new PhantomJSDriver(capabilities);
     }
     private boolean NeedsUpdate(){

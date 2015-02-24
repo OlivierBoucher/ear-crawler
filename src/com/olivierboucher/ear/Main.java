@@ -80,10 +80,10 @@ public class Main {
             case Linux:
                 //if 32bit
                 if(System.getProperty("os.arch").contains("x86")){
-                    System.setProperty("phantomjs.binary.path", "module/phantomjs-1_9_2/linux32/phantomjs.exe");
+                    System.setProperty("phantomjs.binary.path", "module/phantomjs-1_9_2/linux32/phantomjs");
                 }
                 else{
-                    System.setProperty("phantomjs.binary.path", "module/phantomjs-1_9_2/linux64/phantomjs.exe");
+                    System.setProperty("phantomjs.binary.path", "module/phantomjs-1_9_2/linux64/phantomjs");
                 }
                 break;
             case Other:
