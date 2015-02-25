@@ -29,7 +29,7 @@ public class Main {
 		for(EpicerieCrawler crawler : crawlerList) {
 			Date start = new Date();
 			System.out.print("Starting job: " + df.format(start) + "\n");
-			CrawlerJobResult<EpicerieProduct> result = crawler.StartJob();
+			CrawlerJobResult<EpicerieProduct> result = crawler.StartJobMultiThreaded();
 			Date finish = new Date();
 			System.out.print("Finishing job: " + df.format(new Date()) + "\n");
 
@@ -39,10 +39,6 @@ public class Main {
 					//AddToDatabase(result, start, finish);
 					break;
 				case UpToDate:
-					break;
-				case Incomplete:
-					break;
-				case NetworkError:
 					break;
 			}
 		}

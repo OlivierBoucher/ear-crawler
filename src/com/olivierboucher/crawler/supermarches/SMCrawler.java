@@ -89,7 +89,7 @@ public class SMCrawler extends EpicerieCrawler {
 			return list;
 		}
 		catch (IOException ioe) {
-			result = Common.CrawlerResult.NetworkError;
+			//Throw something
 			return null;
 		}
 	}
@@ -104,14 +104,13 @@ public class SMCrawler extends EpicerieCrawler {
 					products.addAll(GetProductsFromCategory(store, category));
 				}
 			}
-			result = (result == Common.CrawlerResult.Incomplete) ? Common.CrawlerResult.Complete : result;
+			result = Common.CrawlerResult.Complete;
 		}
 		else{
 			result = Common.CrawlerResult.UpToDate;
 		}
 	}
 	private void Initialize() throws SQLException{
-		result = Common.CrawlerResult.Incomplete;
 		parser = new SMEpicerieParser();
 		helper.Connect();
 		stores = helper.GetStoreList(WEBSITE_ID);
