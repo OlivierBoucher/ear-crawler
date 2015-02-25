@@ -12,6 +12,7 @@ import com.olivierboucher.crawler.CrawlerJobResult;
 import com.olivierboucher.crawler.EpicerieCrawler;
 import com.olivierboucher.crawler.supermarches.SMCrawler;
 import com.olivierboucher.crawler.walmart.WMCrawler;
+import com.olivierboucher.exception.NetworkErrorException;
 import com.olivierboucher.model.EpicerieProduct;
 
 public class Main {
@@ -27,20 +28,27 @@ public class Main {
         crawlerList.add(new WMCrawler());
 		// This could be multithreaded as well
 		for(EpicerieCrawler crawler : crawlerList) {
-			Date start = new Date();
-			System.out.print("Starting job: " + df.format(start) + "\n");
-			CrawlerJobResult<EpicerieProduct> result = crawler.StartJobMultiThreaded();
-			Date finish = new Date();
-			System.out.print("Finishing job: " + df.format(new Date()) + "\n");
 
-			switch(result.getResult()){
-				case Complete:
-					System.out.print("Job result: Complete (" + getDateDiff(start, finish, TimeUnit.SECONDS) + " seconds)\n");
-					//AddToDatabase(result, start, finish);
-					break;
-				case UpToDate:
-					break;
-			}
+            try {
+                Date start = new Date();
+                System.out.print("Starting job: " + df.format(start) + "\n");
+                CrawlerJobResult<EpicerieProduct> result = crawler.StartJobMultiThreaded();
+                Date finish = new Date();
+                System.out.print("Finishing job: " + df.format(new Date()) + "\n");
+
+                switch(result.getResult()){
+                    case Complete:
+                        System.out.print("Job result: Complete (" + getDateDiff(start, finish, TimeUnit.SECONDS) + " seconds)\n");
+                        //AddToDatabase(result, start, finish);
+                        break;
+                    case UpToDate:
+                        break;
+                }
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }
+
 		}
 	}
 	private static void AddToDatabase(CrawlerJobResult<EpicerieProduct> result, Date start, Date finish) {

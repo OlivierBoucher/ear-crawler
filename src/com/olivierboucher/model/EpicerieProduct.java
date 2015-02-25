@@ -2,7 +2,7 @@ package com.olivierboucher.model;
 
 
 public abstract class EpicerieProduct extends EpicerieElement {
-    protected int id;
+    protected long id;
     protected String description;
     protected String note;
     protected String size;
@@ -23,11 +23,11 @@ public abstract class EpicerieProduct extends EpicerieElement {
         return this.rebate;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 

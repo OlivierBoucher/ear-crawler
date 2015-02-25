@@ -8,13 +8,11 @@ public class NetworkErrorException extends Exception {
     private EpicerieCrawler crawler;
     private EpicerieStore store;
     private EpicerieCategory category;
-    private Exception baseException;
 
-    public NetworkErrorException(String message, EpicerieCrawler crawler, EpicerieCategory category, EpicerieStore store, Exception base){
-        super(message);
+    public NetworkErrorException(String message, EpicerieCrawler crawler, EpicerieCategory category, EpicerieStore store, Throwable cause){
+        super(message, cause);
         this.crawler = crawler;
         this.category = category;
         this.store = store;
-        this.baseException = base;
     }
 }

@@ -16,6 +16,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.*;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedCondition;
@@ -45,7 +46,7 @@ public class WMCrawler extends EpicerieCrawler {
     }
 
     @Override
-    public CrawlerJobResult<EpicerieProduct> StartJobMultiThreaded() {
+    public CrawlerJobResult<EpicerieProduct> StartJobMultiThreaded() throws NetworkErrorException{
         final int THREAD_NUM_MAX = 4;
 
         try {
@@ -59,14 +60,24 @@ public class WMCrawler extends EpicerieCrawler {
             while (!executor.isTerminated()){
             }
             for(Future<List<EpicerieProduct>> promise : promises){
-                products.addAll(promise.get());
+                List<EpicerieProduct> gathered = promise.get();
+                products.addAll(gathered);
             }
+            result = Common.CrawlerResult.Complete;
         }
         catch(InterruptedException e){
             e.printStackTrace();
         }
         catch(ExecutionException e){
-            e.printStackTrace();
+            Class exceptionClass  = e.getCause().getClass();
+
+            if(exceptionClass == NetworkErrorException.class){
+                throw (NetworkErrorException)e.getCause();
+            }
+            else if(exceptionClass == null){
+                //Unknown exception
+                e.getCause().printStackTrace();
+            }
         }
 
         return new CrawlerJobResult<EpicerieProduct>(products, result);
@@ -94,7 +105,8 @@ public class WMCrawler extends EpicerieCrawler {
                         break;
                     }
                 }
-                gatheredProducts.addAll(GetProductsFromCategory(driver, store, category));
+                List<EpicerieProduct> productsCategory = GetProductsFromCategory(driver, store, category);
+                gatheredProducts.addAll(productsCategory);
             }
             driver.close();
             return gatheredProducts;
@@ -124,7 +136,6 @@ public class WMCrawler extends EpicerieCrawler {
         }
         return new CrawlerJobResult<EpicerieProduct>(products, result);
     }
-
     public EpicerieProduct GetFirstProductAvailable (WebDriver driver) throws NetworkErrorException, ProductNotFoundException{
         for(EpicerieStore store : stores) {
             for (EpicerieCategory category : categories) {
@@ -139,7 +150,7 @@ public class WMCrawler extends EpicerieCrawler {
     private List<EpicerieProduct> GetProductsFromCategory(WebDriver driver, EpicerieStore store, EpicerieCategory category) throws NetworkErrorException{
         List<EpicerieProduct> list = new ArrayList<EpicerieProduct>();
 
-        try {
+
             int page = 1;
             for (boolean doContinue = true; doContinue; page++) {
                 StringBuilder sb = new StringBuilder();
@@ -148,37 +159,62 @@ public class WMCrawler extends EpicerieCrawler {
                 sb.append("+31+12");
                 sb.append("/page-");
                 sb.append(page);
+                Document listDoc = null;
+                try {
+                     listDoc = Jsoup.connect(sb.toString()).get();
+                }
+                catch(IOException e){
+                    final int MAX_RETRIES = 5;
+                    int failCount = 0;
 
-                Document listDoc = Jsoup.connect(sb.toString()).get();
+                    while(failCount < MAX_RETRIES){
+                        try {
+                            listDoc = Jsoup.connect(sb.toString()).get();
+                            break;
+                        }
+                        catch (IOException ioe){
+                            failCount++;
+                        }
+
+                    }
+                    if(failCount == MAX_RETRIES){
+                        throw new NetworkErrorException("Cannot connect to website after " + MAX_RETRIES + " tries", this,category,store, e);
+                    }
+                }
 
                 if(listDoc.select("article.product").first() != null){
                     Elements elem_items = listDoc.select("article.product");
                     for(Element element : elem_items){
                         if (element.select("div.title > h1 > a").first() != null) {
                             String link = element.select("div.title > h1 > a").first().attr("href");
-                            //Date start = new Date();
-                            // Navigate to the product link
-                            driver.get("http://www.walmart.ca/" + link);
-                            //Date end = new Date();
-                            //System.out.println("Waited " + Main.getDateDiff(start,end, TimeUnit.MILLISECONDS) + "ms");
-                            //Wait up to 5 secs to let the scripts run
-                            new WebDriverWait(driver, 5).until(new ExpectedCondition<Boolean>() {
-                                public Boolean apply(WebDriver driver) {
-                                    JavascriptExecutor js = (JavascriptExecutor) driver;
-                                    return (Boolean) js.executeScript("return jQuery.active == 0");
-                                }
-                            });
+                            try {
+                                //Date start = new Date();
+                                // Navigate to the product link
+                                driver.get("http://www.walmart.ca" + link);
+                                //Date end = new Date();
+                                //System.out.println("Waited " + Main.getDateDiff(start,end, TimeUnit.MILLISECONDS) + "ms");
+                                //Wait up to 5 secs to let the scripts run
+                                new WebDriverWait(driver, 8).until(new ExpectedCondition<Boolean>() {
+                                    public Boolean apply(WebDriver driver) {
+                                        JavascriptExecutor js = (JavascriptExecutor) driver;
+                                        return (Boolean) js.executeScript("return jQuery.active == 0");
+                                    }
+                                });
 
-                            Document prodDoc = Jsoup.parse(driver.getPageSource());
-                            // Find the body where all infos are
-                            if (prodDoc.select("#wrap").first() != null) {
-                                Element prodElement = prodDoc.select("#wrap").first();
-                                EpicerieProduct product = ExtractProduct(prodElement, parser);
-                                if(product != null){
-                                    product.setCategory(category);
-                                    product.setStore(store);
-                                    list.add(product);
+                                Document prodDoc = Jsoup.parse(driver.getPageSource());
+                                // Find the body where all infos are
+                                if (prodDoc.select("#wrap").first() != null) {
+                                    Element prodElement = prodDoc.select("#wrap").first();
+                                    EpicerieProduct product = ExtractProduct(prodElement, parser);
+                                    if (product != null) {
+                                        product.setCategory(category);
+                                        product.setStore(store);
+                                        list.add(product);
+                                    }
                                 }
+                            }
+                            catch(TimeoutException e){
+                                System.out.println("Ajax timeout error while loading a page INFO:" + category.toString() + "LINK:" + link);
                             }
                         }
                     }
@@ -188,10 +224,8 @@ public class WMCrawler extends EpicerieCrawler {
                 }
             }
             return list;
-        }
-        catch(IOException ioe){
-            throw new NetworkErrorException("Network error while loading a page", this, category,store, ioe);
-        }
+
+
 
     }
     private EpicerieProduct ExtractProduct(Element element, EpicerieParser parser){

@@ -10,13 +10,13 @@ public class WMEpicerieParser extends EpicerieParser {
 
     private void setProductId(WMEpicerieProduct product){
         if(element.select("div[data-sku-id]").first() != null){
-            int id = Integer.parseInt(element.select("div[data-sku-id]").first().attr("data-sku-id"));
+            long id = Long.parseLong(element.select("div[data-sku-id]").first().attr("data-sku-id").replaceAll("[^0-9]", ""));
             product.setId(id);
         }
     }
     private void setProductDescription(WMEpicerieProduct product){
-        if(element.select("#product-desc > p.description").first() != null){
-            String description = element.select("#product-desc > p.description").first().text();
+        if(element.select("h1[data-analytics-type=productPage-productName]").first() != null){
+            String description = element.select("h1[data-analytics-type=productPage-productName]").first().text();
             product.setDescription(description);
         }
     }
@@ -37,11 +37,20 @@ public class WMEpicerieParser extends EpicerieParser {
     }
     private void setProductRebate(WMEpicerieProduct product){
         if(element.select("div.price-was > strike").first() != null){
-            Double price_was = Double.parseDouble(element.select("div.price-was > strike").first().text().replace('$', ' ').trim().replace(',', '.'));
+            String sPrice_was = element.select("div.price-was > strike").first().text();
+            Double price_was = 0.0;
+
+            if(sPrice_was.contains("$")){
+                price_was = Double.parseDouble(sPrice_was.replace("$", "").replace(',', '.'));
+            }
+            else if(sPrice_was.contains("¢")){
+                price_was = Double.parseDouble("0."+ sPrice_was.replace("¢", ""));
+            }
+
             Double price = product.getRebate().getPrice();
 
-            Double rebate = Math.ceil(price_was - price);
-            int rebate_per = (int)(100 - (price / price_was) * 100);
+            Double rebate = price_was - price;
+            int rebate_per = (int)(100-((price / price_was)*100));
 
             product.getRebate().setRebate(rebate);
             product.getRebate().setRebate_percent(rebate_per);

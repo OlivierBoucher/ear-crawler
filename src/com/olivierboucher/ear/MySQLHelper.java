@@ -66,7 +66,7 @@ public class MySQLHelper {
 			 IN iprice_start DATE,
 			 IN iprice_end DATE
 			*/
-			rqst.setInt(1,p.getId());
+			rqst.setLong(1,p.getId());
 			rqst.setString(2, p.getDescription());
 			rqst.setString(3, p.getNote());
 			rqst.setString(4, p.getSize());
