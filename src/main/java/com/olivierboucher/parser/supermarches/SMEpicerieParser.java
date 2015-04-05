@@ -20,9 +20,7 @@ public class SMEpicerieParser extends EpicerieParser {
     private Pattern priceCaisse = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?caisse");
     private Pattern pricePoid = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?lb[\\s]?\\d+[.]\\d{2}[\\s]?\\/[\\s]?kg");
     private Pattern productWithNote = Pattern.compile(
-            "(.+)(\\*\\sVoir.+|\\*\\sJusqu.+|\\*\\sExcepté.+|\\*\\sAchetez-en.+|\\*\\sBonus.+|" +
-                    "Économisez.+|Limite.+|Achetez-en.+|Jusqu.+|Voir\\svari.+|Provenant.+|Catégorie.+|" +
-                    "|Du\\sQuébec.+|Du\\sCanada.+|Du\\sMexique.+|Des\\sÉtats.+)");
+            "(\\*\\sVoir.+|\\*\\sJusqu.+|\\*\\sExcepté.+|\\*\\sAchetez-en.+|\\*\\sBonus.+|Économisez.+|Limite.+|Achetez-en.+|Jusqu.+|Voir\\\\svari.+|Provenant.+|Catégorie.+|Du\\sQuébec.+|Du\\sCanada.+|Du\\sMexique.+|Des\\sÉtats.+|Voir.+|À\\s+l'achat.+)");
 
     public SMEpicerieParser(){
     }
@@ -54,12 +52,8 @@ public class SMEpicerieParser extends EpicerieParser {
 
             Matcher m = productWithNote.matcher(description);
             if(m.find()){
-                //TODO : fix this bug where the regex fucks up
-                String tes = m.group(0);
-                String test = m.group(1);
-                String testt = m.group(2);
-                product.setDescription(m.group(1));
-                product.setNote(m.group(2));
+                product.setNote(m.group(0).trim());
+                product.setDescription(description.replaceFirst(productWithNote.pattern(), "").trim());
             }
             else{
                 product.setDescription(description);

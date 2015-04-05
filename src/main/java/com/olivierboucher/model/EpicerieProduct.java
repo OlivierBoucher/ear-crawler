@@ -1,7 +1,7 @@
 package com.olivierboucher.model;
 
 
-public abstract class EpicerieProduct extends EpicerieElement {
+public abstract class EpicerieProduct {
     protected long sku;
     protected String description;
     protected String note;
@@ -16,11 +16,25 @@ public abstract class EpicerieProduct extends EpicerieElement {
     public EpicerieCategory getCategory(){
         return this.category;
     }
+
+    public void setCategory(EpicerieCategory category) {
+        this.category = category;
+    }
+
     public EpicerieStore getStore(){
         return this.store;
     }
-    public EpicerieRebate getRebate(){
+
+    public void setStore(EpicerieStore store) {
+        this.store = store;
+    }
+
+    public EpicerieRebate getRebate() {
         return this.rebate;
+    }
+
+    public void setRebate(EpicerieRebate rebate) {
+        this.rebate = rebate;
     }
 
     public long getSku() {
@@ -69,17 +83,5 @@ public abstract class EpicerieProduct extends EpicerieElement {
 
     public void setThumbnail(String thumbnail) {
         this.thumbnail = thumbnail;
-    }
-
-    public void setCategory(EpicerieCategory category) {
-        this.category = category;
-    }
-
-    public void setStore(EpicerieStore store) {
-        this.store = store;
-    }
-
-    public void setRebate(EpicerieRebate rebate) {
-        this.rebate = rebate;
     }
 }

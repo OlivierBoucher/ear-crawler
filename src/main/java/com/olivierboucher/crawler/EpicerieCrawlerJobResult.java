@@ -1,19 +1,23 @@
 package com.olivierboucher.crawler;
 
+import com.olivierboucher.model.EpicerieProduct;
+
 import java.util.List;
 
-public class CrawlerJobResult<T> {
-	private List<T> items;
+public class EpicerieCrawlerJobResult {
+	private List<EpicerieProduct> items;
 	private Common.CrawlerResult result;
-	
-	public CrawlerJobResult(List<T> items, Common.CrawlerResult result){
+
+	public EpicerieCrawlerJobResult(List<EpicerieProduct> items, Common.CrawlerResult result) {
 		setResult(result);
 		setItems(items);
 	}
-	public List<T> getItems() {
+
+	public List<EpicerieProduct> getItems() {
 		return items;
 	}
-	public void setItems(List<T> items) {
+
+	public void setItems(List<EpicerieProduct> items) {
 		this.items = items;
 	}
 	public Common.CrawlerResult getResult() {

@@ -1,8 +1,8 @@
 package com.olivierboucher.crawler.supermarches;
 
 import com.olivierboucher.crawler.Common;
-import com.olivierboucher.crawler.CrawlerJobResult;
 import com.olivierboucher.crawler.EpicerieCrawler;
+import com.olivierboucher.crawler.EpicerieCrawlerJobResult;
 import com.olivierboucher.ear.MySQLHelper;
 import com.olivierboucher.model.EpicerieCategory;
 import com.olivierboucher.model.EpicerieProduct;
@@ -36,14 +36,14 @@ public class SMCrawler extends EpicerieCrawler {
 	}
 
 	@Override
-	public CrawlerJobResult<EpicerieProduct> StartJobMultiThreaded() {
+	public EpicerieCrawlerJobResult StartJobMultiThreaded() {
 		return null;
 	}
 	@Override
-	public CrawlerJobResult<EpicerieProduct> StartJob() {
+	public EpicerieCrawlerJobResult StartJob() {
 		// TODO : Verify internet connection
 		Crawl();
-		return new CrawlerJobResult<EpicerieProduct>(products, result);
+		return new EpicerieCrawlerJobResult(products, result);
 	}
 
 	public EpicerieProduct GetFirstProductAvailable(){

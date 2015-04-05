@@ -1,11 +1,14 @@
 package com.olivierboucher.model;
 
-public abstract class EpicerieCategory extends EpicerieElement {
+public abstract class EpicerieCategory {
     protected int id;
     protected String name;
     protected String slug;
     private int productCategoryId;
-    public EpicerieCategory(){};
+
+    public EpicerieCategory() {
+    }
+
     public EpicerieCategory(int id, String name, String slug, int productCategoryId){
         this.id = id;
         this.name = name;

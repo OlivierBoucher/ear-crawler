@@ -1,8 +1,7 @@
 package com.olivierboucher.ear;
 
-import com.olivierboucher.crawler.CrawlerJobResult;
 import com.olivierboucher.crawler.EpicerieCrawler;
-import com.olivierboucher.model.EpicerieProduct;
+import com.olivierboucher.crawler.EpicerieCrawlerJobResult;
 
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -36,7 +35,7 @@ public class Main {
             try {
                 Date start = new Date();
                 System.out.print("Starting job: " + df.format(start) + "\n");
-                CrawlerJobResult<EpicerieProduct> result = crawler.StartPreferedJob();
+                EpicerieCrawlerJobResult result = crawler.StartPreferedJob();
                 Date finish = new Date();
                 System.out.print("Finishing job: " + df.format(new Date()) + "\n");
 
@@ -54,8 +53,9 @@ public class Main {
             }
 		}
 	}
-	private static void AddToDatabase(int websiteId,CrawlerJobResult<EpicerieProduct> result, Date start, Date finish) {
-			System.out.print("Job item result: " + result.getItems().size() + "\n");
+
+    private static void AddToDatabase(int websiteId, EpicerieCrawlerJobResult result, Date start, Date finish) {
+        System.out.print("Job item result: " + result.getItems().size() + "\n");
 			Date db_start = new Date();
 			System.out.print("Sending to database: " + df.format(db_start) + "\n");
 			helper.Connect();
@@ -107,13 +107,6 @@ public class Main {
      * http://www.docjar.com/html/api/org/apache/commons/lang/SystemUtils.java.html
      */
     public static final class OsCheck {
-        /**
-         * types of Operating Systems
-         */
-        public enum OSType {
-            Windows, MacOS, Linux, Other
-        };
-
         // cached result of OS detection
         protected static OSType detectedOS;
 
@@ -137,6 +130,13 @@ public class Main {
                 }
             }
             return detectedOS;
+        }
+
+        /**
+         * types of Operating Systems
+         */
+        public enum OSType {
+            Windows, MacOS, Linux, Other
         }
     }
 }

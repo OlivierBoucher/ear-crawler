@@ -8,7 +8,8 @@ import com.olivierboucher.parser.EpicerieParser;
 
 import java.util.List;
 
-public abstract class EpicerieCrawler extends Crawler<EpicerieProduct> {
+public abstract class EpicerieCrawler {
+    protected Common.CrawlerResult result;
     protected List<EpicerieProduct> products;
     protected List<EpicerieStore> stores;
     protected List<EpicerieCategory> categories;
@@ -16,7 +17,11 @@ public abstract class EpicerieCrawler extends Crawler<EpicerieProduct> {
     protected MySQLHelper helper;
     private boolean execMultiThreaded;
 
-    public CrawlerJobResult<EpicerieProduct> StartPreferedJob(){
+    public abstract EpicerieCrawlerJobResult StartJobMultiThreaded() throws Exception;
+
+    public abstract EpicerieCrawlerJobResult StartJob() throws Exception;
+
+    public EpicerieCrawlerJobResult StartPreferedJob() {
         try {
             if (isExecMultiThreaded()) {
                 return StartJobMultiThreaded();

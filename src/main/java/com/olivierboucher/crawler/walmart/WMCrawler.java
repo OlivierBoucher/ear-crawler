@@ -1,8 +1,8 @@
 package com.olivierboucher.crawler.walmart;
 
 import com.olivierboucher.crawler.Common;
-import com.olivierboucher.crawler.CrawlerJobResult;
 import com.olivierboucher.crawler.EpicerieCrawler;
+import com.olivierboucher.crawler.EpicerieCrawlerJobResult;
 import com.olivierboucher.ear.MySQLHelper;
 import com.olivierboucher.exception.NetworkErrorException;
 import com.olivierboucher.exception.ProductNotFoundException;
@@ -49,7 +49,7 @@ public class WMCrawler extends EpicerieCrawler {
     }
 
     @Override
-    public CrawlerJobResult<EpicerieProduct> StartJobMultiThreaded() throws NetworkErrorException{
+    public EpicerieCrawlerJobResult StartJobMultiThreaded() throws NetworkErrorException {
         final int THREAD_NUM_MAX = 4;
 
         try {
@@ -83,47 +83,11 @@ public class WMCrawler extends EpicerieCrawler {
             }
         }
 
-        return new CrawlerJobResult<EpicerieProduct>(products, result);
+        return new EpicerieCrawlerJobResult(products, result);
     }
-    public class WMCallable implements Callable<List<EpicerieProduct>> {
-        private int id;
-        private EpicerieCategory category;
-        private EpicerieStore store;
-        private WebDriver driver;
-        private List<EpicerieProduct> gatheredProducts;
-        public WMCallable(int id){
-            this.id = id;
-            gatheredProducts = new ArrayList<EpicerieProduct>();
-            store = stores.get(0);
-            DesiredCapabilities capabilities = new DesiredCapabilities();
-            String[] phantomArgs = new  String[] {
-                    "--webdriver-loglevel=NONE"
-            };
-            capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, phantomArgs);
-            capabilities.setCapability("phantomjs.page.settings.loadImages", false);
-            this.driver = new PhantomJSDriver(capabilities);
-        }
-        @Override
-        public List<EpicerieProduct> call() throws NetworkErrorException {
-            while (true) {
-                synchronized (WMCrawler.this){
-                    if(!categoryStack.empty()){
-                        category=categoryStack.pop();
-                        System.out.println("Thread#"+ id + " running category " + category.getName());
-                    }
-                    else{
-                        break;
-                    }
-                }
-                List<EpicerieProduct> productsCategory = GetProductsFromCategory(driver, store, category);
-                gatheredProducts.addAll(productsCategory);
-            }
-            driver.close();
-            return gatheredProducts;
-        }
-    }
+
     @Override
-    public CrawlerJobResult<EpicerieProduct> StartJob() throws NetworkErrorException{
+    public EpicerieCrawlerJobResult StartJob() throws NetworkErrorException {
         //TODO : Verify internet connection
         DesiredCapabilities capabilities = new DesiredCapabilities();
         capabilities.setCapability("phantomjs.page.settings.loadImages", false);
@@ -134,20 +98,20 @@ public class WMCrawler extends EpicerieCrawler {
 
         WebDriver driver = new PhantomJSDriver(capabilities);
         // TODO : Modify for needsUpdate once testing done
-        if(true) {
+        if (true) {
             for (EpicerieStore store : stores) {
                 for (EpicerieCategory category : categories) {
                     products.addAll(GetProductsFromCategory(driver, store, category));
                 }
             }
-        }
-        else{
+        } else {
             result = Common.CrawlerResult.UpToDate;
         }
-        return new CrawlerJobResult<EpicerieProduct>(products, result);
+        return new EpicerieCrawlerJobResult(products, result);
     }
-    public EpicerieProduct GetFirstProductAvailable (WebDriver driver) throws NetworkErrorException, ProductNotFoundException{
-        for(EpicerieStore store : stores) {
+
+    public EpicerieProduct GetFirstProductAvailable(WebDriver driver) throws NetworkErrorException, ProductNotFoundException {
+        for (EpicerieStore store : stores) {
             for (EpicerieCategory category : categories) {
                 List<EpicerieProduct> list = GetProductsFromCategory(driver, store, category);
                 if (list.size() > 0) {
@@ -157,6 +121,7 @@ public class WMCrawler extends EpicerieCrawler {
         }
         throw new ProductNotFoundException("Impossible to find any product");
     }
+
     private List<EpicerieProduct> GetProductsFromCategory(WebDriver driver, EpicerieStore store, EpicerieCategory category) throws NetworkErrorException{
         List<EpicerieProduct> list = new ArrayList<EpicerieProduct>();
 
@@ -242,10 +207,12 @@ public class WMCrawler extends EpicerieCrawler {
 
 
     }
+
     private EpicerieProduct ExtractProduct(Element element, EpicerieParser parser){
         parser.setElement(element);
         return parser.getProduct();
     }
+
     private void Initialize() throws SQLException {
         parser = new WMEpicerieParser();
 
@@ -258,11 +225,52 @@ public class WMCrawler extends EpicerieCrawler {
         categoryStack = new Stack<EpicerieCategory>();
         categoryStack.addAll(categories);
     }
+
     private boolean NeedsUpdate(WebDriver driver){
         return false;
     }
+
     @Override
     public int getWebsiteId(){
         return WMCrawler.WEBSITE_ID;
+    }
+
+    public class WMCallable implements Callable<List<EpicerieProduct>> {
+        private int id;
+        private EpicerieCategory category;
+        private EpicerieStore store;
+        private WebDriver driver;
+        private List<EpicerieProduct> gatheredProducts;
+
+        public WMCallable(int id) {
+            this.id = id;
+            gatheredProducts = new ArrayList<EpicerieProduct>();
+            store = stores.get(0);
+            DesiredCapabilities capabilities = new DesiredCapabilities();
+            String[] phantomArgs = new String[]{
+                    "--webdriver-loglevel=NONE"
+            };
+            capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, phantomArgs);
+            capabilities.setCapability("phantomjs.page.settings.loadImages", false);
+            this.driver = new PhantomJSDriver(capabilities);
+        }
+
+        @Override
+        public List<EpicerieProduct> call() throws NetworkErrorException {
+            while (true) {
+                synchronized (WMCrawler.this) {
+                    if (!categoryStack.empty()) {
+                        category = categoryStack.pop();
+                        System.out.println("Thread#" + id + " running category " + category.getName());
+                    } else {
+                        break;
+                    }
+                }
+                List<EpicerieProduct> productsCategory = GetProductsFromCategory(driver, store, category);
+                gatheredProducts.addAll(productsCategory);
+            }
+            driver.close();
+            return gatheredProducts;
+        }
     }
 }
