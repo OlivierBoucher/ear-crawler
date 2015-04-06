@@ -6,6 +6,7 @@ import com.olivierboucher.crawler.EpicerieCrawlerJobResult;
 import com.olivierboucher.ear.MySQLHelper;
 import com.olivierboucher.exception.NetworkErrorException;
 import com.olivierboucher.exception.ProductNotFoundException;
+import com.olivierboucher.exception.ProductParseException;
 import com.olivierboucher.model.EpicerieCategory;
 import com.olivierboucher.model.EpicerieProduct;
 import com.olivierboucher.model.EpicerieStore;
@@ -210,7 +211,11 @@ public class WMCrawler extends EpicerieCrawler {
 
     private EpicerieProduct ExtractProduct(Element element, EpicerieParser parser){
         parser.setElement(element);
-        return parser.getProduct();
+        try {
+            return parser.getProduct();
+        } catch (ProductParseException e) {
+            return null;
+        }
     }
 
     private void Initialize() throws SQLException {

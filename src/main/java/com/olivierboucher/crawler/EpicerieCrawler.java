@@ -1,6 +1,7 @@
 package com.olivierboucher.crawler;
 
 import com.olivierboucher.ear.MySQLHelper;
+import com.olivierboucher.exception.UnrecoverableException;
 import com.olivierboucher.model.EpicerieCategory;
 import com.olivierboucher.model.EpicerieProduct;
 import com.olivierboucher.model.EpicerieStore;
@@ -21,7 +22,7 @@ public abstract class EpicerieCrawler {
 
     public abstract EpicerieCrawlerJobResult StartJob() throws Exception;
 
-    public EpicerieCrawlerJobResult StartPreferedJob() {
+    public EpicerieCrawlerJobResult StartPreferedJob() throws UnrecoverableException {
         try {
             if (isExecMultiThreaded()) {
                 return StartJobMultiThreaded();

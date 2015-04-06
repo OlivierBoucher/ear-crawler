@@ -4,6 +4,9 @@ import com.olivierboucher.crawler.Common;
 import com.olivierboucher.crawler.EpicerieCrawler;
 import com.olivierboucher.crawler.EpicerieCrawlerJobResult;
 import com.olivierboucher.ear.MySQLHelper;
+import com.olivierboucher.exception.NetworkErrorException;
+import com.olivierboucher.exception.ProductParseException;
+import com.olivierboucher.exception.UnrecoverableException;
 import com.olivierboucher.model.EpicerieCategory;
 import com.olivierboucher.model.EpicerieProduct;
 import com.olivierboucher.model.EpicerieStore;
@@ -40,26 +43,39 @@ public class SMCrawler extends EpicerieCrawler {
 		return null;
 	}
 	@Override
-	public EpicerieCrawlerJobResult StartJob() {
+	public EpicerieCrawlerJobResult StartJob() throws UnrecoverableException {
 		// TODO : Verify internet connection
-		Crawl();
-		return new EpicerieCrawlerJobResult(products, result);
+		try {
+			if (NeedsUpdate()) {
+				for (EpicerieStore store : stores) {
+					for (EpicerieCategory category : categories) {
+						products.addAll(GetProductsFromCategory(store, category));
+					}
+				}
+				result = Common.CrawlerResult.Complete;
+			} else {
+				result = Common.CrawlerResult.UpToDate;
+			}
+			return new EpicerieCrawlerJobResult(products, result);
+		} catch (NetworkErrorException e) {
+			throw new UnrecoverableException("Could not recover from network excpetion", e);
+		}
 	}
 
-	public EpicerieProduct GetFirstProductAvailable(){
-		for(EpicerieStore store : stores){
-			for(EpicerieCategory category : categories){
+	private EpicerieProduct GetFirstProductAvailable() throws NetworkErrorException {
+		for (EpicerieStore store : stores) {
+			for (EpicerieCategory category : categories) {
 				List<EpicerieProduct> list = GetProductsFromCategory(store, category);
-				if(list.size() > 0){
+				if (list.size() > 0) {
 					return list.get(0);
 				}
 			}
 		}
 		return null;
 	}
-	private List<EpicerieProduct> GetProductsFromCategory(EpicerieStore store, EpicerieCategory category){
+
+	private List<EpicerieProduct> GetProductsFromCategory(EpicerieStore store, EpicerieCategory category) throws NetworkErrorException {
 		List<EpicerieProduct> list = new ArrayList<EpicerieProduct>();
-		// Crawl code
 		try {
 			int page = 1;
 			Boolean doContinue = true;
@@ -91,25 +107,15 @@ public class SMCrawler extends EpicerieCrawler {
 			return list;
 		}
 		catch (IOException ioe) {
-			//Throw something
-			return null;
+			throw new NetworkErrorException("", this, category, store, ioe);
 		}
 	}
 	private EpicerieProduct ExtractProduct(Element element, EpicerieParser parser){
 		parser.setElement(element);
-		return parser.getProduct();
-	}
-	private void Crawl(){
-		if(NeedsUpdate()) {
-			for (EpicerieStore store : stores) {
-				for (EpicerieCategory category : categories) {
-					products.addAll(GetProductsFromCategory(store, category));
-				}
-			}
-			result = Common.CrawlerResult.Complete;
-		}
-		else{
-			result = Common.CrawlerResult.UpToDate;
+		try {
+			return parser.getProduct();
+		} catch (ProductParseException e) {
+			return null;
 		}
 	}
 	private void Initialize() throws SQLException{
@@ -119,7 +125,8 @@ public class SMCrawler extends EpicerieCrawler {
 		categories = helper.GetCategoryList(WEBSITE_ID);
 		helper.Disconnect();
 	}
-	private boolean NeedsUpdate(){
+
+	private boolean NeedsUpdate() throws NetworkErrorException {
 		Date online_date = GetFirstProductAvailable().getRebate().getStart();
 		Date db_date = null;
 		// Get date from database

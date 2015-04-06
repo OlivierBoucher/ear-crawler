@@ -1,4 +1,8 @@
 package com.olivierboucher.parser.supermarches;
+
+import com.olivierboucher.exception.ElementNotFoundException;
+import com.olivierboucher.exception.InparsableDateException;
+import com.olivierboucher.exception.ProductParseException;
 import com.olivierboucher.model.supermarches.SMEpicerieProduct;
 import com.olivierboucher.model.supermarches.SMEpicerieRebate;
 import com.olivierboucher.parser.EpicerieParser;
@@ -20,12 +24,12 @@ public class SMEpicerieParser extends EpicerieParser {
     private Pattern priceCaisse = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?caisse");
     private Pattern pricePoid = Pattern.compile("\\d+[.]\\d{2}[\\s]?\\/[\\s]?lb[\\s]?\\d+[.]\\d{2}[\\s]?\\/[\\s]?kg");
     private Pattern productWithNote = Pattern.compile(
-            "(\\*\\sVoir.+|\\*\\sJusqu.+|\\*\\sExcepté.+|\\*\\sAchetez-en.+|\\*\\sBonus.+|Économisez.+|Limite.+|Achetez-en.+|Jusqu.+|Voir\\\\svari.+|Provenant.+|Catégorie.+|Du\\sQuébec.+|Du\\sCanada.+|Du\\sMexique.+|Des\\sÉtats.+|Voir.+|À\\s+l'achat.+)");
+            "(\\*\\sVoir.+|\\*\\sJusqu.+|\\*\\sExcepté.+|\\*\\sAchetez-en.+|\\*\\sBonus.+|Économisez.+|Limite.+|Achetez-en.+|Jusqu.+|Voir\\\\svari.+|Provenant.+|Catégorie.+|Du\\sQuébec?.+|Du\\sCanada?.+|Du\\sMexique?.+|Des\\sÉtats?.+|Voir.+|À\\s+l'achat.+)");
 
     public SMEpicerieParser(){
     }
 
-    private void setProductId(SMEpicerieProduct product){
+    private void setProductId(SMEpicerieProduct product) throws ElementNotFoundException {
         if(element.select("a.dslink") != null){
             if(element.select("a.dslink").first().attr("onClick") != null){
                 String rawId = element.select("a.dslink").first().attr("onClick");
@@ -43,9 +47,13 @@ public class SMEpicerieParser extends EpicerieParser {
                 }
                 product.setSku(Long.parseLong(sId));
             }
+        } else {
+            throw new ElementNotFoundException("Impossible to find product id element");
+
         }
     }
-    private void setProductDescription(SMEpicerieProduct product){
+
+    private void setProductDescription(SMEpicerieProduct product) throws ElementNotFoundException {
         if(element.select("[width=230] > a, [width=228] > a").first() != null){
             String description;
             description = element.select("[width=230] > a, [width=228] > a").first().text().trim();
@@ -59,19 +67,28 @@ public class SMEpicerieParser extends EpicerieParser {
                 product.setDescription(description);
                 product.setNote("");
             }
+        } else {
+            throw new ElementNotFoundException("Impossible to find product description element");
         }
     }
-    private void setProductSize(SMEpicerieProduct product){
+
+    private void setProductSize(SMEpicerieProduct product) throws ElementNotFoundException {
         if(element.select("td[width=76]").first() != null){
             product.setSize(element.select("td[width=76]").first().text());
+        } else {
+            throw new ElementNotFoundException("Impossible to find product size element");
         }
     }
-    private void setProductOrigin(SMEpicerieProduct product){
+
+    private void setProductOrigin(SMEpicerieProduct product) throws ElementNotFoundException {
         if(element.select("td[width=92]").first() != null){
             product.setOrigin(element.select("td[width=92]").first().text());
+        } else {
+            throw new ElementNotFoundException("Impossible to find origin element");
         }
     }
-    private void setProductPriceAndQty(SMEpicerieProduct product){
+
+    private void setProductPriceAndQty(SMEpicerieProduct product) throws ElementNotFoundException {
         if(element.select("td[width=72]").first() != null){
             String priceUnitS = element.select("td[width=72]").first().text();
             // Matchers
@@ -123,9 +140,12 @@ public class SMEpicerieParser extends EpicerieParser {
                 rebate.setPrice(Double.parseDouble(priceS));
             }
             product.setRebate(rebate);
+        } else {
+            throw new ElementNotFoundException("Impossible to find price and quatity element");
         }
     }
-    private void setProductRebate(SMEpicerieProduct product){
+
+    private void setProductRebate(SMEpicerieProduct product) throws ElementNotFoundException {
         if(element.select("td[width=65]").first() != null){
             String[] splitted = element.select("td[width=65]").first().text().split("[$]");
 
@@ -154,9 +174,12 @@ public class SMEpicerieParser extends EpicerieParser {
 
             //Reassign to the product
             product.setRebate(rebate);
+        } else {
+            throw new ElementNotFoundException("Impossible to find rebate element");
         }
     }
-    private void setProductDates(SMEpicerieProduct product){
+
+    private void setProductDates(SMEpicerieProduct product) throws InparsableDateException, ElementNotFoundException {
         if(element.select("td[width=60]").first() != null){
             String bothDates = element.select("td[width=60]").first().html();
             bothDates = bothDates.replace("&nbsp;", " ");
@@ -169,38 +192,48 @@ public class SMEpicerieParser extends EpicerieParser {
 
             //Reassign to the product
             product.setRebate(rebate);
+        } else {
+            throw new ElementNotFoundException("Impossible to find date element");
         }
     }
-    private void setProductThumbnail(SMEpicerieProduct product){
+
+    private void setProductThumbnail(SMEpicerieProduct product) throws ElementNotFoundException {
         if(element.select("img").first() != null){
             product.setThumbnail(element.select("img").first().attr("src"));
+        } else {
+            throw new ElementNotFoundException("Impossible to find thumbnail element");
         }
     }
     @Override
-    public SMEpicerieProduct getProduct(){
+    public SMEpicerieProduct getProduct() throws ProductParseException {
         SMEpicerieProduct product = new SMEpicerieProduct();
+        try {
+            // Id
+            setProductId(product);
+            // Description and note
+            setProductDescription(product);
+            // Format
+            setProductSize(product);
+            // Origine
+            setProductOrigin(product);
+            // Prix
+            setProductPriceAndQty(product);
+            // Rabais
+            setProductRebate(product);
+            // Dates
+            setProductDates(product);
+            // Image
+            setProductThumbnail(product);
 
-        // Id
-        setProductId(product);
-        // Description and note
-        setProductDescription(product);
-        // Format
-        setProductSize(product);
-        // Origine
-        setProductOrigin(product);
-        // Prix
-        setProductPriceAndQty(product);
-        // Rabais
-        setProductRebate(product);
-        // Dates
-        setProductDates(product);
-        // Image
-        setProductThumbnail(product);
-
-        //TODO : fix this
-        return product;
+            return product;
+        } catch (ElementNotFoundException e) {
+            throw new ProductParseException("Impossible to parse product", e);
+        } catch (InparsableDateException e) {
+            throw new ProductParseException("Impossible to parse product", e);
+        }
     }
-    private Date GetRealDate(String date){
+
+    private Date GetRealDate(String date) throws InparsableDateException {
         DateFormat df = new SimpleDateFormat("dd/MM/yyyy");
 
         String[] splitted = date.split(" ");
@@ -284,7 +317,7 @@ public class SMEpicerieParser extends EpicerieParser {
             return df.parse(sb.toString());
         }
         catch (ParseException e) {
-            return null;
+            throw new InparsableDateException(String.format("Date is unparsable : %s", date), e);
         }
     }
     public void setElement(Element element){

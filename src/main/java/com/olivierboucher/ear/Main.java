@@ -2,6 +2,7 @@ package com.olivierboucher.ear;
 
 import com.olivierboucher.crawler.EpicerieCrawler;
 import com.olivierboucher.crawler.EpicerieCrawlerJobResult;
+import com.olivierboucher.exception.UnrecoverableException;
 
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -27,13 +28,16 @@ public class Main {
             crawlerList = helper.GetCrawlers();
         }
         catch (SQLException e){
-            System.out.print(e.getStackTrace());
+            System.out.println("Could not get crawlers from database");
+            System.out.println("========== Stack trace ==========");
+            e.printStackTrace();
+            System.exit(1);
         }
-		// This could be multithreaded as well
 		for(EpicerieCrawler crawler : crawlerList) {
 
             try {
                 Date start = new Date();
+                System.out.println(String.format("Crawler: %s", crawler.getClass().toString()));
                 System.out.print("Starting job: " + df.format(start) + "\n");
                 EpicerieCrawlerJobResult result = crawler.StartPreferedJob();
                 Date finish = new Date();
@@ -47,8 +51,9 @@ public class Main {
                     case UpToDate:
                         break;
                 }
-            }
-            catch(Exception e){
+            } catch (UnrecoverableException e) {
+                System.out.println(String.format("Crawler %s crashed with exception: %s", crawler.getClass().toString(), e.getMessage()));
+                System.out.println("========== Stack trace ==========");
                 e.printStackTrace();
             }
 		}
@@ -97,15 +102,6 @@ public class Main {
                 break;
         }
     }
-    /**
-     * helper class to check the operating system this Java VM runs in
-     *
-     * please keep the notes below as a pseudo-license
-     *
-     * http://stackoverflow.com/questions/228477/how-do-i-programmatically-determine-operating-system-in-java
-     * compare to http://svn.terracotta.org/svn/tc/dso/tags/2.6.4/code/base/common/src/com/tc/util/runtime/Os.java
-     * http://www.docjar.com/html/api/org/apache/commons/lang/SystemUtils.java.html
-     */
     public static final class OsCheck {
         // cached result of OS detection
         protected static OSType detectedOS;
