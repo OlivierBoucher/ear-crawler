@@ -194,6 +194,7 @@ public class WMCrawler extends EpicerieCrawler {
                                 }
                             }
                             catch(TimeoutException e){
+                                //TODO: Should use string.format
                                 System.out.println("Ajax timeout error while loading a page INFO:" + category.toString() + "LINK:" + link);
                             }
                         }

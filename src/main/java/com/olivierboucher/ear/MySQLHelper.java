@@ -25,7 +25,7 @@ public class MySQLHelper {
 	public void Connect(){
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
-			connection = DriverManager.getConnection("jdbc:mysql://104.131.203.247/epicerie_a_rabais_v3", "ear_system", "EarSystem2015");
+			connection = DriverManager.getConnection("jdbc:mysql://xxxxxxxxxxxxx", "xxxxxxxx", "xxxxxxxxxx");
 		}
 		catch (ClassNotFoundException e){
 			e.printStackTrace();
